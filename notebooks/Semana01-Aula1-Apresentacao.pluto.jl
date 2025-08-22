@@ -128,20 +128,21 @@ md"""
 # ╔═╡ 319ea98e-9a82-4a35-90e6-e9c98a645880
 0.3 - 0.2
 
-# ╔═╡ 298cfcda-7f7c-4229-a9b8-2f953fe692a8
-bitstring(0.3)
-
-# ╔═╡ 07041c36-e88d-4c0f-9bae-3b782d225a2d
-bitstring(0.2)
-
 # ╔═╡ 56dcd858-a360-49ab-8e97-7615c59c8097
 md"""
-## Ponto flutuante: por que `0.3 - 0.2` não é exatamente `0.1`?
+## Ponto flutuante: 
+### Por que `0.3 - 0.2` não é exatamente `0.1`?
 
 - Em binário, `0.3` e `0.2` são dízimas infinitas, então **não cabem exatamente** em `Float64`.
 - O computador armazena aproximações; operações carregam **erros de arredondamento**.
 - Abaixo mostramos o resultado com muitas casas, os bits internos, e alternativas exatas.
 """
+
+# ╔═╡ 298cfcda-7f7c-4229-a9b8-2f953fe692a8
+bitstring(0.3)
+
+# ╔═╡ 07041c36-e88d-4c0f-9bae-3b782d225a2d
+bitstring(0.2)
 
 # ╔═╡ 5a917180-cf0b-4ec9-97e6-0d910fa2b33b
 begin
@@ -250,9 +251,9 @@ version = "1.11.0"
 # ╠═2539b502-4d09-4048-ac10-17c6577a4ea6
 # ╠═1ad53ea8-fd2a-4191-b561-c51c4721679c
 # ╠═319ea98e-9a82-4a35-90e6-e9c98a645880
+# ╟─56dcd858-a360-49ab-8e97-7615c59c8097
 # ╠═298cfcda-7f7c-4229-a9b8-2f953fe692a8
 # ╠═07041c36-e88d-4c0f-9bae-3b782d225a2d
-# ╟─56dcd858-a360-49ab-8e97-7615c59c8097
 # ╠═497b6fbc-788b-432a-98d9-8079142c9b50
 # ╠═5a917180-cf0b-4ec9-97e6-0d910fa2b33b
 # ╠═2d598f69-3f0c-4669-b80c-1b984fb0744d
