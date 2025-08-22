@@ -4,6 +4,9 @@
 using Markdown
 using InteractiveUtils
 
+# ╔═╡ 497b6fbc-788b-432a-98d9-8079142c9b50
+using Printf
+
 # ╔═╡ 2b50dac0-47e7-4d21-a4ac-e22026c51dc5
 md"""
 ## UFSC/Blumenau
@@ -116,24 +119,51 @@ md"""
 
 # ╔═╡ 2539b502-4d09-4048-ac10-17c6577a4ea6
 # Numeros
-2+2
+2 + 2
 
 # ╔═╡ 1ad53ea8-fd2a-4191-b561-c51c4721679c
 # Operações
-2*3
+2 * 3
 
-# ╔═╡ d423d847-e90e-49a4-8016-9939cb6a4021
-# Matrizes
-A = [1 2;
-	 2 1.0]
+# ╔═╡ 319ea98e-9a82-4a35-90e6-e9c98a645880
+0.3 - 0.2
 
-# ╔═╡ 928e168f-4665-43c4-863a-06580d07db0a
-#Vetores
-x = [1, 3]
+# ╔═╡ 298cfcda-7f7c-4229-a9b8-2f953fe692a8
+bitstring(0.3)
 
-# ╔═╡ 39c459e7-9d01-49c9-81da-168085fcea0e
-# Produto Matriz vetor
-A*x
+# ╔═╡ 07041c36-e88d-4c0f-9bae-3b782d225a2d
+bitstring(0.2)
+
+# ╔═╡ 56dcd858-a360-49ab-8e97-7615c59c8097
+md"""
+## Ponto flutuante: por que `0.3 - 0.2` não é exatamente `0.1`?
+
+- Em binário, `0.3` e `0.2` são dízimas infinitas, então **não cabem exatamente** em `Float64`.
+- O computador armazena aproximações; operações carregam **erros de arredondamento**.
+- Abaixo mostramos o resultado com muitas casas, os bits internos, e alternativas exatas.
+"""
+
+# ╔═╡ 5a917180-cf0b-4ec9-97e6-0d910fa2b33b
+begin
+  res = 0.3 - 0.2
+  @printf("%.20f\n", res)  # mostra 20 casas decimais
+  res
+end
+
+# ╔═╡ 2d598f69-3f0c-4669-b80c-1b984fb0744d
+bitstring(res)  # representação IEEE 754 (64 bits)
+
+# ╔═╡ 461f290a-75b8-4092-b3ca-2cd959def6f2
+begin
+  r = 3 // 10 - 2 // 10         # aritmética exata com racionais
+  (r, float(r))             # racional e versão Float64
+end
+
+# ╔═╡ 67541f4b-e9cd-44e2-a96c-1a79ed7d5271
+setprecision(128) do
+  big_res = big"0.3" - big"0.2"  # BigFloat com maior precisão
+  big_res
+end
 
 # ╔═╡ 08e87f3d-f10e-4b13-906e-039ce104af7a
 md"""
@@ -177,9 +207,16 @@ Experimente reimplementar em Julia na célula abaixo.
 # TODO: Implementação
 
 
+# ╔═╡ cf49eb0c-6cf2-4cb6-a431-db7d6c49a401
+
+
+# ╔═╡ 237140f5-283a-43fa-8c64-f1c5698d50e3
+
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -188,9 +225,16 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.6"
 manifest_format = "2.0"
-project_hash = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+project_hash = "f604830d70fa58877def5710c5d1fa32dcb3f998"
 
-[deps]
+[[deps.Printf]]
+deps = ["Unicode"]
+uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+version = "1.11.0"
+
+[[deps.Unicode]]
+uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+version = "1.11.0"
 """
 
 # ╔═╡ Cell order:
@@ -205,10 +249,16 @@ project_hash = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 # ╟─e7b00b38-667e-47eb-9924-69a7f6c6c4e0
 # ╠═2539b502-4d09-4048-ac10-17c6577a4ea6
 # ╠═1ad53ea8-fd2a-4191-b561-c51c4721679c
-# ╠═d423d847-e90e-49a4-8016-9939cb6a4021
-# ╠═928e168f-4665-43c4-863a-06580d07db0a
-# ╠═39c459e7-9d01-49c9-81da-168085fcea0e
-# ╠═08e87f3d-f10e-4b13-906e-039ce104af7a
+# ╠═319ea98e-9a82-4a35-90e6-e9c98a645880
+# ╠═298cfcda-7f7c-4229-a9b8-2f953fe692a8
+# ╠═07041c36-e88d-4c0f-9bae-3b782d225a2d
+# ╟─56dcd858-a360-49ab-8e97-7615c59c8097
+# ╠═497b6fbc-788b-432a-98d9-8079142c9b50
+# ╠═5a917180-cf0b-4ec9-97e6-0d910fa2b33b
+# ╠═2d598f69-3f0c-4669-b80c-1b984fb0744d
+# ╠═461f290a-75b8-4092-b3ca-2cd959def6f2
+# ╠═67541f4b-e9cd-44e2-a96c-1a79ed7d5271
+# ╟─08e87f3d-f10e-4b13-906e-039ce104af7a
 # ╠═128f6567-24de-4192-bde2-f27f56973bcc
 # ╠═60c69a55-507f-4437-a0a5-ee33bdc3a3b7
 # ╠═5297a734-153b-4612-acfa-c1cf7864180d
@@ -216,5 +266,7 @@ project_hash = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 # ╠═21e4829e-888a-4510-b7d7-3c794c1c62ed
 # ╟─107e7c1d-4134-4b30-9c6c-20b40efb7cf0
 # ╠═6347e072-85c4-4f76-9276-c2fb9fe8c8d2
+# ╠═cf49eb0c-6cf2-4cb6-a431-db7d6c49a401
+# ╠═237140f5-283a-43fa-8c64-f1c5698d50e3
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
