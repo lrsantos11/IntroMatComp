@@ -7,15 +7,13 @@ using InteractiveUtils
 # ╔═╡ 2b50dac0-47e7-4d21-a4ac-e22026c51dc5
 md"""
 ## UFSC/Blumenau
-## MAT4642 - Introdução à Matemática Computacional
+### MAT4642 - Introdução à Matemática Computacional
 ### Prof. Luiz-Rafael Santos
 ### Semana 01 - Aula 01
 """
 
 # ╔═╡ 56948164-ddb1-4b45-9f4d-f0354a2d0993
 md"""
-
-MAT4642 - Introdução à Matemática Computacional (2025-2)
 ## Informações do curso
 
 - Professor Luiz-Rafael Santos ([l.r.santos@ufsc.br](mailto:l.r.santos@ufsc.br))
@@ -47,7 +45,7 @@ md"""
 ## Avaliação
     
 - Serão realizados Projetos Computacionais para aferição de frequência, que renderão média $T$.  
-- Além disso, teremos 02 provas, $P1 e P2$ nas semanas 8  e 17 respectivamente.
+- Além disso, teremos 02 provas, $P1$ e $P2$ nas semanas 8  e 17 respectivamente.
 
 - A média $$M$$ será calculada na forma:
     $$M = 0,5 T + 0,25 P1 + 0,25 P2$$.
@@ -60,7 +58,7 @@ md"""
 
 # ╔═╡ 8164d338-ce20-11eb-29ce-7749362afceb
 md"
-# Introdução à Linguagem Julia
+## Introdução à Linguagem Julia
 
 [Julia](https://www.julialang.org) é uma linguagem dinâmica de *alto nível* e **alto desempenho**.
 - Ela se assemelha ao MATLAB e ao Python na facilidade de escrita
@@ -114,7 +112,6 @@ md"
 # ╔═╡ e7b00b38-667e-47eb-9924-69a7f6c6c4e0
 md"""
 ## Introdução ao Julia
-
 """
 
 # ╔═╡ 2539b502-4d09-4048-ac10-17c6577a4ea6
@@ -122,7 +119,8 @@ md"""
 2+2
 
 # ╔═╡ 1ad53ea8-fd2a-4191-b561-c51c4721679c
-2*2
+# Operações
+2*3
 
 # ╔═╡ d423d847-e90e-49a4-8016-9939cb6a4021
 # Matrizes
@@ -136,6 +134,11 @@ x = [1, 3]
 # ╔═╡ 39c459e7-9d01-49c9-81da-168085fcea0e
 # Produto Matriz vetor
 A*x
+
+# ╔═╡ 08e87f3d-f10e-4b13-906e-039ce104af7a
+md"""
+## Funções Matemáticas
+"""
 
 # ╔═╡ 128f6567-24de-4192-bde2-f27f56973bcc
 # Funções matemáticas
@@ -156,7 +159,7 @@ f(x) = \sin(x) \cdot \cos(x)
 """
 
 # ╔═╡ 21e4829e-888a-4510-b7d7-3c794c1c62ed
-# TODO: Implementação
+# TODO: Implementação de uma fução
 
 
 # ╔═╡ 107e7c1d-4134-4b30-9c6c-20b40efb7cf0
@@ -194,17 +197,18 @@ project_hash = "da39a3ee5e6b4b0d3255bfef95601890afd80709"
 # ╟─2b50dac0-47e7-4d21-a4ac-e22026c51dc5
 # ╟─56948164-ddb1-4b45-9f4d-f0354a2d0993
 # ╟─288d110b-0c15-4355-96cc-03159dc89b10
-# ╠═5f8ae8aa-f20f-4af0-a100-4f1d09d7ce81
+# ╟─5f8ae8aa-f20f-4af0-a100-4f1d09d7ce81
 # ╟─8164d338-ce20-11eb-29ce-7749362afceb
 # ╟─d0426d69-d528-45d6-b81b-c6d712452073
 # ╟─9e5ca483-5b46-4ca8-bffa-1af3b97cd4f7
 # ╟─96ede339-ba1a-48d6-899e-d2ec9f54b44f
-# ╠═e7b00b38-667e-47eb-9924-69a7f6c6c4e0
+# ╟─e7b00b38-667e-47eb-9924-69a7f6c6c4e0
 # ╠═2539b502-4d09-4048-ac10-17c6577a4ea6
 # ╠═1ad53ea8-fd2a-4191-b561-c51c4721679c
 # ╠═d423d847-e90e-49a4-8016-9939cb6a4021
 # ╠═928e168f-4665-43c4-863a-06580d07db0a
 # ╠═39c459e7-9d01-49c9-81da-168085fcea0e
+# ╠═08e87f3d-f10e-4b13-906e-039ce104af7a
 # ╠═128f6567-24de-4192-bde2-f27f56973bcc
 # ╠═60c69a55-507f-4437-a0a5-ee33bdc3a3b7
 # ╠═5297a734-153b-4612-acfa-c1cf7864180d

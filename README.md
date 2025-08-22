@@ -20,7 +20,7 @@ Por favor,  siga [as instruções ](https://www.youtube.com/playlist?list=PLIFgJ
 
 - Professor Luiz-Rafael Santos ([l.r.santos@ufsc.br](mailto:l.r.santos@ufsc.br))
 
-- Ter 08:20-10:00, Qua 10:11-12:00$^*$ 
+- Ter 08:20-10:00, Sex 10:11-12:00$^*$ 
 - Atendimento: TBD
 
 - [Disciplina no Moodle](https://presencial.moodle.ufsc.br/course/view.php?id=36035)
