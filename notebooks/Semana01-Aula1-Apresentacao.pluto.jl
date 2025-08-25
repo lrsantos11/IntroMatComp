@@ -126,6 +126,24 @@ md"""
 2 * 3
 
 # ╔═╡ 319ea98e-9a82-4a35-90e6-e9c98a645880
+begin
+	var1 = 2.5
+	cos(var1) 
+end
+
+# ╔═╡ 3720acd2-871c-40a9-8dd0-c6f8eff371e1
+sin(90)
+
+# ╔═╡ 06ee1fb1-f63a-43fc-b6bb-da8bfc540cbb
+π
+
+# ╔═╡ d460634a-3d00-4449-acb2-172d7fcda9a7
+α = π/2
+
+# ╔═╡ f25a320f-b238-41e9-b458-3675de966b66
+tan(α)
+
+# ╔═╡ f2f45163-87be-49ff-a331-f6cf80408cf9
 0.3 - 0.2
 
 # ╔═╡ 56dcd858-a360-49ab-8e97-7615c59c8097
@@ -189,9 +207,15 @@ f(x) = \sin(x) \cdot \cos(x)
 ```
 """
 
-# ╔═╡ 21e4829e-888a-4510-b7d7-3c794c1c62ed
-# TODO: Implementação de uma fução
+# ╔═╡ f96aacfc-e8e4-49b1-bcc3-3f398f6c7776
+x = 4
 
+# ╔═╡ 21e4829e-888a-4510-b7d7-3c794c1c62ed
+# TODO: Implementação de uma função
+func1(🌻) = sin(🌻) * cos(🌻)
+
+# ╔═╡ 5cbab613-cb10-43ec-bfa9-db761891cb6b
+func1(π)
 
 # ╔═╡ 107e7c1d-4134-4b30-9c6c-20b40efb7cf0
 md"""
@@ -206,13 +230,24 @@ Experimente reimplementar em Julia na célula abaixo.
 
 # ╔═╡ 6347e072-85c4-4f76-9276-c2fb9fe8c8d2
 # TODO: Implementação
-
+func_media(r,s,t) = (r + s + t)/3
 
 # ╔═╡ cf49eb0c-6cf2-4cb6-a431-db7d6c49a401
-
+# Usar variáveis somente no escopo desta céula, use `let` e `end`
+let  
+	x = 3
+	y = 2.5
+	z = 4
+	func_media(x,y,z)
+end
 
 # ╔═╡ 237140f5-283a-43fa-8c64-f1c5698d50e3
-
+let
+	x = 5
+	y = 5
+	u = 2100
+	func_media(x,y,u)
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -251,6 +286,11 @@ version = "1.11.0"
 # ╠═2539b502-4d09-4048-ac10-17c6577a4ea6
 # ╠═1ad53ea8-fd2a-4191-b561-c51c4721679c
 # ╠═319ea98e-9a82-4a35-90e6-e9c98a645880
+# ╠═3720acd2-871c-40a9-8dd0-c6f8eff371e1
+# ╠═06ee1fb1-f63a-43fc-b6bb-da8bfc540cbb
+# ╠═d460634a-3d00-4449-acb2-172d7fcda9a7
+# ╠═f25a320f-b238-41e9-b458-3675de966b66
+# ╠═f2f45163-87be-49ff-a331-f6cf80408cf9
 # ╟─56dcd858-a360-49ab-8e97-7615c59c8097
 # ╠═298cfcda-7f7c-4229-a9b8-2f953fe692a8
 # ╠═07041c36-e88d-4c0f-9bae-3b782d225a2d
@@ -264,7 +304,9 @@ version = "1.11.0"
 # ╠═60c69a55-507f-4437-a0a5-ee33bdc3a3b7
 # ╠═5297a734-153b-4612-acfa-c1cf7864180d
 # ╟─7af5e389-5ac5-42c5-96ff-e3f5db5ff732
+# ╠═f96aacfc-e8e4-49b1-bcc3-3f398f6c7776
 # ╠═21e4829e-888a-4510-b7d7-3c794c1c62ed
+# ╠═5cbab613-cb10-43ec-bfa9-db761891cb6b
 # ╟─107e7c1d-4134-4b30-9c6c-20b40efb7cf0
 # ╠═6347e072-85c4-4f76-9276-c2fb9fe8c8d2
 # ╠═cf49eb0c-6cf2-4cb6-a431-db7d6c49a401
