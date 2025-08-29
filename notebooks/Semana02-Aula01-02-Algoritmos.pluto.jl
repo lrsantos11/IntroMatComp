@@ -99,7 +99,7 @@ exp(x) #ℯ ^ x
 1.2356e-6
 
 # ╔═╡ 64d5b46f-1e11-4f95-97f8-6b94665eb1a4
-1_000_000
+1_000_000 #separador de milhar
 
 # ╔═╡ b8f2125d-55c7-408d-a100-ca48ed987f66
 0.1 + 0.2 - 0.3
@@ -120,7 +120,7 @@ md"""
 # ╔═╡ 6d0293c3-a67d-4ed1-8dbf-4b549282af2e
 begin
 	y = 4
-	z = 10
+	z = 100
 end
 
 # ╔═╡ ab9dea6e-0ee2-4424-8e9b-6b5832329e5a
@@ -182,12 +182,16 @@ md"""
 # ╔═╡ 6971750b-bd68-4e10-a716-88abb9805872
 @bind K Slider(2:300, show_value = true) #PlutoUI
 
+# ╔═╡ 3679b25c-e26e-4a93-944d-0ceb07e0ce28
+typeof(1:2:K)
+
 # ╔═╡ 1dd3dc7b-b977-4c8e-aad8-d99db7c1e9f1
 let
 	soma = 0
 	@show K
 	for i ∈ 1:K
-		soma = i^2 + soma
+		# soma = i^2 + soma 
+		soma += i^2
 	end
 	@show soma
 end
@@ -211,7 +215,7 @@ md"""
 ```julia
 function nome_func(input1, input2, ...)
 	#Comandos com variáveis inputs
-	return output1, output 2 #Um ou mais outputs
+	return output1, output2 #Um ou mais outputs
 end
 ```
 - Construir funções é melhor e mais útil para reprodutibilidade.
@@ -253,13 +257,51 @@ $$n! := 1\cdot 2\cdot \cdots \cdot n$$
 # ╔═╡ 9c90333c-4134-4e86-8d10-d41bff035ab7
 # Implementar
 function meu_fatorial(n)
+	@assert n >= 0 "Garanta que n é não negativo"
+	@assert n <= 20 "Essa função não computa fatorais maiores que 20"
+	fat = 1
 	# Laço for
-
+	for i ∈ 1:n
+		fat *= i # fat = fat * i
+	end
 	# Retonar fatorial de n
+	@show fat
+	return fat
 end
 
 # ╔═╡ 7eac8d7b-cde0-4f86-8e00-09d6cadb38da
+@bind N Slider(2:300, show_value = true) #PlutoUI
 
+# ╔═╡ 32fe89e3-95b1-40c5-9e30-739fbdf1ff80
+meu_fatorial(N)
+
+# ╔═╡ b9abe9b0-f4f0-4279-b71c-4add6294f2fb
+meu_fatorial(20)
+
+# ╔═╡ 10093c07-b92e-41f0-b202-39e9a4071a5b
+factorial(21)
+
+# ╔═╡ c47287ab-4969-4059-a38c-bef7a72478ec
+md"""
+#### Fatorial com Recursividade
+"""
+
+# ╔═╡ dcacd035-8cbd-442b-8d77-a07880899013
+function fatorial_recursivo(n)
+	@assert n >= 0 "Garanta que n é não negativo"
+	if n == 0
+		println("n == 0, retornando 1")
+		return 1
+	else 
+		println("n == $n. Chamando a função para $(n-1)")
+		saida = n * fatorial_recursivo(n-1)
+		println("n == $n. Termino da recursividade. Calculo de $(n)! = $saida")
+		return saida
+	end
+end
+
+# ╔═╡ dc036e93-7320-4778-9778-c8a45d23903c
+fatorial_recursivo(20)
 
 # ╔═╡ 05461694-b4c4-4a2e-8f9f-01574dca4919
 md"""
@@ -315,7 +357,7 @@ md"""
 **Observações:** 
 - Suba um Notebook Pluto com nome _Tarefa1_Meu_Nome.pluto.jl_ na Tarefa 1 específica no _moodle_
 
-- Não esqueça de incluir as *Referências* consultadas, incluindo pessoas.
+- Não esqueça de incluir as *Referências* consultadas, incluindo pessoas e IA regenerativa.
 
 """
 
@@ -434,7 +476,7 @@ version = "1.11.0"
 
 # ╔═╡ Cell order:
 # ╟─b6f6e191-50a1-4ddb-811e-2bb784ae5031
-# ╠═e45bbc21-b1dd-492e-8550-22b080a5ad9a
+# ╟─e45bbc21-b1dd-492e-8550-22b080a5ad9a
 # ╟─49d2d518-0895-4013-aa21-08da48721577
 # ╠═319c8f13-e5f6-41b6-8027-9499d9b8ae34
 # ╠═62aaef76-98ba-4dbf-a5af-3f6d8eaefa1f
@@ -476,6 +518,7 @@ version = "1.11.0"
 # ╠═2de8ac14-da66-4992-92b2-762be4e901c7
 # ╠═897c2ae0-cb64-4799-ba16-a9fae8eb2356
 # ╟─81a97a42-b5a8-40f4-9fcc-63d20541f1d1
+# ╠═3679b25c-e26e-4a93-944d-0ceb07e0ce28
 # ╠═6971750b-bd68-4e10-a716-88abb9805872
 # ╠═1dd3dc7b-b977-4c8e-aad8-d99db7c1e9f1
 # ╟─d232035e-e65e-406d-bd4b-a68b467ce55b
@@ -489,11 +532,17 @@ version = "1.11.0"
 # ╟─79b22457-22eb-4424-8781-c74fc76687ed
 # ╠═9c90333c-4134-4e86-8d10-d41bff035ab7
 # ╠═7eac8d7b-cde0-4f86-8e00-09d6cadb38da
+# ╠═32fe89e3-95b1-40c5-9e30-739fbdf1ff80
+# ╠═b9abe9b0-f4f0-4279-b71c-4add6294f2fb
+# ╠═10093c07-b92e-41f0-b202-39e9a4071a5b
+# ╟─c47287ab-4969-4059-a38c-bef7a72478ec
+# ╠═dcacd035-8cbd-442b-8d77-a07880899013
+# ╠═dc036e93-7320-4778-9778-c8a45d23903c
 # ╟─05461694-b4c4-4a2e-8f9f-01574dca4919
 # ╟─f25056db-7961-4ffb-91d3-5a7bdba3b85a
 # ╠═2c17e973-e8e6-496d-a7fd-c484cf0e4238
 # ╠═adec5130-12a1-4740-823b-b3bcb2e2f28f
 # ╠═765f0776-f910-4acf-a42f-827fabcd1381
-# ╟─dd93b856-008d-498e-be2e-e07fe2a9666b
+# ╠═dd93b856-008d-498e-be2e-e07fe2a9666b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
