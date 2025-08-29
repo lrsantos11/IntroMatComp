@@ -24,7 +24,7 @@ md"""
 ## UFSC/Blumenau
 ### MAT4642 - Introdução à Matemática Computacional
 ### Prof. Luiz-Rafael Santos
-### Semana 01 - Aula 02
+### Semana 02 - Aulas 01 e 02
 """
 
 # ╔═╡ e45bbc21-b1dd-492e-8550-22b080a5ad9a
@@ -131,11 +131,6 @@ md"""
 ## Pacote `PlutoUI.jl`
 """
 
-# ╔═╡ 600ee512-b3c0-4b62-8bbc-4fde624325f2
-md"""
-- Usando função `with_terminal()`
-"""
-
 # ╔═╡ fb9bd0ca-0a65-4d3b-96a0-fcf4112133a8
 println("Hello, ")
 
@@ -157,15 +152,6 @@ end
 
 # ╔═╡ 44ea2c67-9e6a-4b93-894f-2a3b66d6a42a
 "x é variável valendo $x"
-
-# ╔═╡ 05461694-b4c4-4a2e-8f9f-01574dca4919
-md"""
-## Calculando Raízes quadradas
-
-Vamos agora implementar nosso Algoritmo para encontrar raízes quadradas de um inteiro $n>0$. 
-
-- Quero encontrar ${m \in \mathbb{Z}}$  tal que ${m^2 = n}$.
-"""
 
 # ╔═╡ 4701e06d-68c8-4143-ae04-f9653d6fb1fe
 false
@@ -206,15 +192,17 @@ let
 	@show soma
 end
 
-# ╔═╡ 01f66458-4d27-42e0-8eae-2abdcda07af4
-@bind n Slider(1:49, show_value = true) #PlutoUI
+# ╔═╡ d232035e-e65e-406d-bd4b-a68b467ce55b
+md"""
+De forma mais geral, um laço `for` pode ter a sintaxe
 
-# ╔═╡ 2dd983c1-288d-48b5-b12f-1ac281b5e6ad
-# TODO: Implementação
-begin
-	# laço de 1:n
-	
+```julia
+for x = início:passo:fim
+    # Código a ser repetido
 end
+```
+Isso fará com que o código dentro do laço seja repetido, com `x` começando no valor `início`, aumentando de acordo com `passo` a cada repetição e terminando em ou antes de x alcançar o valor `fim`.
+"""
 
 # ╔═╡ 9bfd6085-389b-4f81-897c-2c8591977fd1
 md"""
@@ -256,21 +244,31 @@ z1 = primeira_func(2,3)
 z2 = primeira_func(5,4)
 
 # ╔═╡ 79b22457-22eb-4424-8781-c74fc76687ed
+md"""
+### Função que calcula o Fatorial $n!$
 
+$$n! := 1\cdot 2\cdot \cdots \cdot n$$
+"""
 
 # ╔═╡ 9c90333c-4134-4e86-8d10-d41bff035ab7
-# TAREFAL: Implementar
-function calcula_raiz(n)
+# Implementar
+function meu_fatorial(n)
 	# Laço for
 
-	# Retonar Raiz Exata ou intervalo que tem uma raiz
+	# Retonar fatorial de n
 end
 
-# ╔═╡ b6885993-3460-4c70-b45c-d4fa1680b300
-3.6^2
+# ╔═╡ 7eac8d7b-cde0-4f86-8e00-09d6cadb38da
 
-# ╔═╡ 6bd095fb-a44f-4e6e-ae87-ff066706ee63
-3.7^2
+
+# ╔═╡ 05461694-b4c4-4a2e-8f9f-01574dca4919
+md"""
+## Calculando Raízes quadradas
+
+Vamos agora implementar nosso Algoritmo para encontrar raízes quadradas de um inteiro $n>0$. 
+
+- Quero encontrar ${m \in \mathbb{Z}}$  tal que ${m^2 = n}$.
+"""
 
 # ╔═╡ f25056db-7961-4ffb-91d3-5a7bdba3b85a
 md"""
@@ -283,16 +281,39 @@ qualquer_outra_coisa = :LRS
 # ╔═╡ adec5130-12a1-4740-823b-b3bcb2e2f28f
 qualquer_outra_coisa == :LR
 
+# ╔═╡ 765f0776-f910-4acf-a42f-827fabcd1381
+# Implementar
+function calcula_raiz(n)
+	for m ∈ 1:n
+		# @show m 
+		if m^2 == n # (true ou false)
+			# Declarar que m é raiz quadrada de n
+			# println("$m é raiz quadrada de $n")
+			# Parar o loop for 
+			return m, m, :RaizExata 
+		end
+		if m^2 > n
+			# Declarar que n não tem raiz quadrada
+			# println("$n não tem raiz quadrada inteira")
+			# Parar o loop for 
+			return  m-1, m, :IntervaloRaiz  
+		end
+	end
+end
+
 # ╔═╡ dd93b856-008d-498e-be2e-e07fe2a9666b
 md"""
-#### Tarefa Semana 1
+#### Tarefa Semana 2
 
-> Implementar em Julia uma função que calcula a raiz quadrada de um número inteiro $${n >0}$$. 
->  1. A funçãor retorna o valor da raiz; ou
->  2. Um intervalo de inteiros em que a raiz (não-inteira) está.
+> Dar as implementações em Julia das funções que: 
+> 1. calculam fatorial;
+>    - Uma das duas funções deve usar recursividade
+> 2.  de uma função que calcula a raiz quadrada exata de de um número inteiro ${n >0}$:
+>    - A função raiz inteira deve retorna o valor da raiz; ou
+>    - Um intervalo de inteiros em que a raiz (não-inteira) está.
 
 **Observações:** 
-- Suba um Notebook Pluto com nome _Tarefa1_Meu_Nome.pluto.jl_ na Tarefa 1 específica no Julia
+- Suba um Notebook Pluto com nome _Tarefa1_Meu_Nome.pluto.jl_ na Tarefa 1 específica no _moodle_
 
 - Não esqueça de incluir as *Referências* consultadas, incluindo pessoas.
 
@@ -413,7 +434,7 @@ version = "1.11.0"
 
 # ╔═╡ Cell order:
 # ╟─b6f6e191-50a1-4ddb-811e-2bb784ae5031
-# ╟─e45bbc21-b1dd-492e-8550-22b080a5ad9a
+# ╠═e45bbc21-b1dd-492e-8550-22b080a5ad9a
 # ╟─49d2d518-0895-4013-aa21-08da48721577
 # ╠═319c8f13-e5f6-41b6-8027-9499d9b8ae34
 # ╠═62aaef76-98ba-4dbf-a5af-3f6d8eaefa1f
@@ -443,12 +464,10 @@ version = "1.11.0"
 # ╠═ab9dea6e-0ee2-4424-8e9b-6b5832329e5a
 # ╟─12d93f85-309c-4b4a-8e8b-28bd5ec4381b
 # ╠═79afca88-d86b-45be-993d-2a7bea872982
-# ╟─600ee512-b3c0-4b62-8bbc-4fde624325f2
 # ╠═fb9bd0ca-0a65-4d3b-96a0-fcf4112133a8
 # ╠═4e192825-1212-48bb-bdff-b575fe3997a2
 # ╠═d048bcf5-221f-4df7-8e7c-1383e398d6a0
 # ╠═44ea2c67-9e6a-4b93-894f-2a3b66d6a42a
-# ╟─05461694-b4c4-4a2e-8f9f-01574dca4919
 # ╠═4701e06d-68c8-4143-ae04-f9653d6fb1fe
 # ╠═fd97eb9e-d128-4b3b-bee8-003b013cbaf6
 # ╠═c06da7e9-7792-475c-b996-a58d457db0b3
@@ -459,8 +478,7 @@ version = "1.11.0"
 # ╟─81a97a42-b5a8-40f4-9fcc-63d20541f1d1
 # ╠═6971750b-bd68-4e10-a716-88abb9805872
 # ╠═1dd3dc7b-b977-4c8e-aad8-d99db7c1e9f1
-# ╠═01f66458-4d27-42e0-8eae-2abdcda07af4
-# ╠═2dd983c1-288d-48b5-b12f-1ac281b5e6ad
+# ╟─d232035e-e65e-406d-bd4b-a68b467ce55b
 # ╟─9bfd6085-389b-4f81-897c-2c8591977fd1
 # ╠═6583763d-073f-4f94-b45f-00a73eec8d3d
 # ╠═b0f60c52-abea-4f60-b928-cde1c6ab0ad9
@@ -468,13 +486,14 @@ version = "1.11.0"
 # ╠═d44a8a2e-ebb2-4f9d-8aa2-29edd790bedd
 # ╠═7e94f239-c97d-4e67-98e6-3ec6c4a57d9f
 # ╠═825889e5-22f6-4b78-bfdf-d54bffcd07f8
-# ╠═79b22457-22eb-4424-8781-c74fc76687ed
+# ╟─79b22457-22eb-4424-8781-c74fc76687ed
 # ╠═9c90333c-4134-4e86-8d10-d41bff035ab7
-# ╠═b6885993-3460-4c70-b45c-d4fa1680b300
-# ╠═6bd095fb-a44f-4e6e-ae87-ff066706ee63
+# ╠═7eac8d7b-cde0-4f86-8e00-09d6cadb38da
+# ╟─05461694-b4c4-4a2e-8f9f-01574dca4919
 # ╟─f25056db-7961-4ffb-91d3-5a7bdba3b85a
 # ╠═2c17e973-e8e6-496d-a7fd-c484cf0e4238
 # ╠═adec5130-12a1-4740-823b-b3bcb2e2f28f
+# ╠═765f0776-f910-4acf-a42f-827fabcd1381
 # ╟─dd93b856-008d-498e-be2e-e07fe2a9666b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
