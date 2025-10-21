@@ -4,253 +4,133 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ bfb664d9-019a-444d-8686-614d005b27b7
+# ╔═╡ 854b20ee-4a64-49fc-95ae-bbdc4b3337e9
 begin
+	using Plots
 	using Random
-	Random.seed!(42) #Guia do mochileiro das galáxias
-	println(rand(3))
-	println(rand(5))
-
-	 # Reutilizar a mesma semente reinicia o gerador para o mesmo estado exato.
-	Random.seed!(42) #Guia do mochileiro das galáxias
-	println(rand(2))
-	println(rand(6))
+	using StatsBase,Distributions,  StatsPlots #Chamar funções estatísticas
 end
 
-# ╔═╡ 059fcf85-0430-4894-b10e-3bca8cef70e8
-begin
-	using Plots, Distributions, StatsPlots
-end
-
-# ╔═╡ 8c4c061a-a8ee-11f0-3fa9-dfa9be19d8b9
+# ╔═╡ 01777032-ab5b-11f0-1945-d71872063676
 md"""
 ## UFSC/Blumenau
 ### MAT4642 - Introdução à Matemática Computacional
 ### Prof. Luiz-Rafael Santos
-### Semana 10 - Aula 01
+### Semana 09 - Aula 02
 """
 
-# ╔═╡ 56c5dc45-1c7f-4b58-b9e6-fccdaf38b518
+# ╔═╡ d17fb0a3-4f9e-4c23-a4f5-655a74db6803
 md"""
-# Gerando Números Aleatórios"""
+# Métodos de Monte Carlo"""
 
-# ╔═╡ 8926cba3-eebd-4ac7-b4a1-6a4ef94603e4
+# ╔═╡ 941adcc2-82eb-43d8-9ca6-e0a619f839b8
 md"""
-## A Distribuição Uniforme: Números em $[0, 1]$
-
-Uma ferramenta fundamental na matemática computacional é a capacidade de gerar números aleatórios. A função `rand(n)` é nossa principal ferramenta para isso, gerando $n$ números **pseudoaleatórios** de uma distribuição uniforme no intervalo $[0,1]$.
-
-Por que *pseudoaleatórios*? Porque os números são gerados por um algoritmo determinístico. No entanto, o algoritmo é projetado para produzir sequências que são estatisticamente indistinguíveis de sequências verdadeiramente aleatórias. Para praticamente todos os propósitos práticos, como simulações estatísticas, modelagem de ruído ou métodos de Monte Carlo, podemos tratá-los como genuinamente aleatórios.
+### Simulando a soma de múltiplos dados
 """
 
-# ╔═╡ 96d3a166-ad98-498e-a9ae-cfb76207cd3b
-rand()
-
-# ╔═╡ 52ba4da3-5f0c-46d8-af2b-2cd77581eff4
-rand()
-
-# ╔═╡ 26e83a52-7e45-4ec8-8872-b66319890590
-# Vetor com 3 números aleatórios
-rand(3)
-
-# ╔═╡ ec401b61-4229-41de-b6db-ce6207d89711
-# Matriz 10x5
-rand(10,5)
-
-# ╔═╡ 01e1a626-75c2-4cd5-8266-a5d440905588
-#Tensor 10x5x3
-rand(10,5,3)
-
-# ╔═╡ da226b68-c767-472f-b2d5-582b6d9393e3
-md"""
-### Reprodutibilidade com Semente
-
-Como os números pseudoaleatórios são gerados por um algoritmo, podemos forçá-lo a produzir a *mesma* sequência de números todas as vezes. Isso é chamado de **definir a semente** do gerador de números aleatórios e é extremamente útil para depuração de código ou para garantir que os resultados científicos sejam reproduzíveis.
-
-Podemos fazer isso usando o comando `Random.seed!` do pacote `Random`. Você fornece um número inteiro arbitrário como a *semente*.
-"""
-
-# ╔═╡ 7cedcc39-0856-441e-a956-4144a3dd2bb4
-md"""
-## Escalando para Outros Intervalos: Distribuição Uniforme em $[a, b]$
-
-Para gerar números aleatórios uniformemente distribuídos em um intervalo arbitrário $[a,b]$, podemos realizar uma transformação linear na saída de `rand()`. Se $x$ é um número aleatório em $[0,1]$, então o número $y = a + (b-a)x$ será um número aleatório em $[a,b]$. Vamos ver isso em ação."""
-
-# ╔═╡ aa49d5d5-4a72-4469-91e3-20c7ae27ccba
-# Gera 5 números aleatórios no intervalo [-1, 1].
-
-
-# ╔═╡ 27811d93-d0e0-491b-be5a-aeb1fca818b2
-function escalar_intervalo(x, a, b)
-	@assert a < b
-	return a .+ (b - a) .* x #usamos .+ e .* para que a operação num .+ vetor esteja definida
-end
-
-# ╔═╡ 6d72a0a4-57ca-40c9-b670-d93edee0a448
-escalar_intervalo(rand(5),-1, 1)
-
-# ╔═╡ 87498b94-9aa3-4ca5-ba04-98632127c8ea
-# Gera 13 números aleatórios no intervalo [4, 11].
-escalar_intervalo(rand(13),4,11)
-
-# ╔═╡ 82f5fa7f-ae1d-485f-9b5b-7e29c18e935a
-# Gerando números aleatórios com outros tipos 
-rand(BigFloat,20)
-
-# ╔═╡ 3cc94421-e3b4-4043-92b2-2c4aa8917030
-rand(Float32, 5)
-
-# ╔═╡ 73948513-11ff-446c-865a-2166de7215c4
-md"""
-## Amostragem de Coleções: Números Inteiros Aleatórios e Mais
-
-A função `rand` é muito versátil. Além de gerar números de ponto flutuante, ela também pode selecionar aleatoriamente itens de uma coleção, como um intervalo de inteiros ou um vetor de objetos.
-"""
-
-# ╔═╡ 575a99d5-d77c-45f5-90d3-23ff35633655
-rand(Int,3)
-
-# ╔═╡ e99de034-1e26-4ef4-9d63-ceaf364699f2
-# Seleciona aleatoriamente 3 inteiros do intervalo de 1 a 10 (inclusive).
-# Isso equivale a lançar um dado de 10 lados três vezes.
-
-rand(1:10, 3)
-
-# ╔═╡ b09d3fd9-d300-4ebf-97dc-ac1c5fe06e10
-colecao = [π, exp(1),-1.0]
-
-# ╔═╡ 255c397f-a2d3-420e-b156-17b05ec2083c
-# Também podemos amostrar (com reposição) de qualquer coleção de itens.
-rand(colecao, 2)
-
-# ╔═╡ 16e62485-e05e-45e4-9a78-9de738cb3197
-md"""
-## A Distribuição Normal (Gaussiana)
-
-Outra distribuição essencial é a **distribuição normal**, frequentemente visualizada como a clássica "curva em forma de sino". A função `randn()` gera números aleatórios da distribuição normal *padrão*, que tem média 0 e desvio padrão 1."""
-
-# ╔═╡ 3fe92b5a-f73d-40e8-8d93-3b244fe838ea
-# Gera um número aleatório da distribuição normal padrão.
-randn()
-
-
-# ╔═╡ 064000a9-1de1-4f11-91ed-4d41c0ed11db
-let
-	μ = 10
-	σ = 3
-	plot(Normal(μ,σ), title = "Distribuição Normal")
-end
-
-# ╔═╡ e05d0e49-0f9d-48a5-8fce-161295453b8a
-md"""
-Assim como na distribuição uniforme, podemos escalar e deslocar a saída de `randn()` para amostrar qualquer distribuição normal.
-
-Se $Z$ é uma variável aleatória da distribuição normal padrão, então a variável $X = \mu + \sigma Z$ segue uma distribuição normal com média $\mu$ e desvio padrão $\sigma$. Vamos usar isso para gerar números de uma distribuição normal com média 2 e desvio padrão 5."""
-
-# ╔═╡ ad6f80a1-d596-4ad2-bcb6-80ca394638f6
-function escala_normal(X, μ, σ)
-	return μ .+ σ .* X 
-end
-
-# ╔═╡ bc1375a3-9e65-421b-829c-a01e6ab5305f
-let 
-	μ = 2
-	σ = 5
-	escala_normal(randn(20), μ, σ)
-end
-
-# ╔═╡ de04e293-442a-4c25-a904-4ad2c3381dcc
-md"""
-# Visualizando com Histogramas
-## Contando Frequências
-
-Uma ótima maneira de entender um conjunto de dados aleatórios é visualizá-lo. Um **histograma** é um gráfico que agrupa números em intervalos (ou "bins") e mostra a contagem de quantos valores caem em cada intervalo. Isso nos dá uma poderosa percepção visual da distribuição dos dados.
-
-Vamos começar escrevendo uma função simples para contar a frequência de resultados discretos, como os resultados de lançamentos de um dado.
-"""
-
-# ╔═╡ 13266118-4ee3-46bb-aeef-2b341dc4bb2a
+# ╔═╡ b6e88b48-e409-45fd-926f-e93276abd601
 function jogar_dados(num_tentativas; lados = 6)
 	return rand(1:lados, num_tentativas)
 end 
 
-# ╔═╡ d03b3166-3dac-4623-8d61-c516afae11d8
-tentativas_dados = jogar_dados(20)
+# ╔═╡ 199f9de6-d0f8-4930-99a0-fe836571029a
+jogar_dados(10)
 
-# ╔═╡ e3b7f100-9203-4be7-8dab-ac75c71d40a5
-saidas = [1,2,3,4,5,6]
+# ╔═╡ ee5dbfee-5aeb-4f4d-b8ea-6650a6adb0a5
+md"""
+#### Lista Compreensiva
+"""
 
-# ╔═╡ a59e129c-22b7-4f81-b3b5-3185dde41a6d
-function conta_histograma(saidas, tentativas)
-	#Número de saídas
-	num_saidas = length(saidas)
-	
-	#Inicializar vetor de inteiros para guardar a contagem
-	contagem = zeros(Int, num_saidas)
-	for s ∈ saidas
-		for t ∈ tentativas
-			if s == t
-				contagem[s] += 1
-			end
+# ╔═╡ bf2c3622-45eb-47df-a71f-a721ef149940
+md"""
+ ```math
+ 	A_{i,j} = i + j, \forall i,j = 1,\ldots, n
+```
+"""
+
+# ╔═╡ b55d7055-b86d-495c-bb38-4a6d2e2f7868
+let
+	n = 10 
+	A = Float64[i + j for i in 1:n, j in 1:n]
+	B = zeros(n,n)
+	for i in 1:n
+		for j in 1:n
+			B[i,j] = i+j
 		end
 	end
-	
-	return contagem 
+	@info A
+	@info B
 end
 
-# ╔═╡ 3d6592a3-4a06-4c9a-b9f3-29e278accab6
-probabilidade = conta_histograma(saidas, tentativas_dados)/20
+# ╔═╡ ea6091f0-a545-43c3-b159-eb0f6dda628b
 
-# ╔═╡ 47811425-7b5d-41a9-af21-d393a32a1847
+
+# ╔═╡ ebb5f1a1-47ab-4041-866b-52693787341e
+jogadas_dados = [jogar_dados(10) for i in 1:10]
+
+# ╔═╡ ee61ebcd-7b60-44b3-85eb-2cfd9f5b683e
+sum(jogadas_dados)
+
+# ╔═╡ 7de896f0-9e06-4611-92a9-3dc34c2a6df9
+function simula_soma_dados(num_dados, num_tentativas)
+	jogadas_dados = [jogar_dados(num_tentativas) for nd in 1:num_dados]
+	# for nd in 1:num_dados
+	# 	push!(jogadas_dados, jogar_dados(num_tentativas))
+	# end
+	soma_dados = sum(jogadas_dados) # sum soma os dados dos elementos do vetor
+	media_soma = mean(soma_dados)
+	println("Média da soma dos dados: $(media_soma)")
+	desvio_padrao = std(soma_dados)
+	println("Desvio Padrão: $desvio_padrao")
+	histogram(soma_dados, title = "Lançamento de $(num_dados) dados",
+			 	ylabel = "Frequencia", xlabel = "soma dos dados")
+end
+
+# ╔═╡ 7231d5c7-c008-4837-8c54-24cc2d75ba37
+simula_soma_dados(2,1000)
+
+# ╔═╡ 7b4ccf6c-5eb7-4e9d-bc77-35766c7fe080
+simula_soma_dados(10,100000)
+
+# ╔═╡ dee98a52-87c7-4470-ae6e-f89a338efa46
 md"""
-Agora podemos usar essa função para simular o lançamento de um dado justo de seis faces muitas vezes.  
-Contando os resultados e dividindo pelo número de testes, podemos estimar a probabilidade de cada face.  
-Segundo a Lei dos Grandes Números, à medida que aumentamos o número de testes, essa probabilidade experimental deve se aproximar da probabilidade teórica verdadeira de $1/6$.
-"""
+## O poder da simulação
 
-# ╔═╡ afacecce-3392-490d-a7bd-c5d5ad84bcf2
-begin
-	function simula_dados(num_tentativas)
-		#Possíveis resultados
-		saidas = 1:6
-		# Simula Lançamentos
-		tentativas = jogar_dados(num_tentativas)
-    	# Usa nossa função para contar a frequência de cada resultado.
-		contagem = 	conta_histograma(saidas,tentativas)
-		# Calcular Probabilidade
-		probabilidades = contagem ./ num_tentativas
+Muitos problemas em matemática e ciência são complexos demais para resolver com fórmulas diretas. **Métodos de Monte Carlo** oferecem uma alternativa poderosa: em vez de resolver o problema analiticamente, nós o simulamos. Ao executar muitos experimentos que envolvem aleatoriedade e fazer a média dos resultados, podemos obter estimativas surpreendentemente precisas de probabilidades, médias ou outras quantidades.
 
-	    # Cria um gráfico de barras com os resultados.
+Como primeiro exemplo, vamos considerar uma pergunta simples: em média, quantas vezes é preciso lançar um dado padrão até sair um 6? Podemos simular esse experimento milhares de vezes e encontrar a média."""
 
-		bar(saidas, probabilidades,
-		   	xlabel = "Resultado dos dados",
-		    ylabel = "Probabildade estimada",
-		    title = "Distribuição de $(num_tentativas) lançamentos de dados",
-		    leg = false,
-			ylim = (0,0.2)
-		   )
+# ╔═╡ 54cb725a-1da7-4c78-8403-ce8db17ebabe
+let
+	# Definir o número de tentativas
+	num_tentativas = 100_000
+
+	# Armazenar o número de experimentos necessários para conseguir 6
+	rodadas_até_seis = Int[]
+
+	#Laço principal: executar o experimento 'num_tentativas' vezes
+	for i in 1:num_tentativas
+		num_rodadas = 0
+		#Equanto não sair um 6, continua
+		while true
+			rodada = rand(1:6)
+			num_rodadas += 1
+			if rodada == 6
+				break
+			end
+		end
+		push!(rodadas_até_seis, num_rodadas)
 	end
-	simula_dados(1000)
+	@info "Máximo: $(maximum(rodadas_até_seis))"
+	# Calcula o número médio de lançamentos ao longo de todos os testes.
+	media_rodadas = mean(rodadas_até_seis)
+	@info "Média das rodadas: $media_rodadas"
+	histogram(rodadas_até_seis, leg = false)
+	
 end
 
-# ╔═╡ 941c8631-093d-4801-b6e2-74be4ad2a594
-md"""
-## Usando Funções de Histograma Embutidas
-
-Para dados contínuos, como a saída de `randn()`, é muito mais fácil usar uma função embutida.  
-A função `histogram` do `Plots.jl` agrupa automaticamente os dados em um número especificado de intervalos (*bins*) e plota as frequências.
-"""
-
-# ╔═╡ 0e2597b0-64f1-4763-b8fc-f584bf622b98
-begin
-	    # Gera 10.000 números aleatórios da distribuição normal padrão.
-
-	x = randn(10_000)
-	histogram(x, bins =  50, )
-end
-
-# ╔═╡ 78edf00c-8e0f-40c6-ba92-03916195af97
-
+# ╔═╡ 0763ea49-58b3-49af-a5b3-89364d6ccc30
+rodada = rand(1:6)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -258,11 +138,13 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 
 [compat]
 Distributions = "~0.25.122"
 Plots = "~1.41.1"
+StatsBase = "~0.34.6"
 StatsPlots = "~0.15.8"
 """
 
@@ -272,7 +154,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.6"
 manifest_format = "2.0"
-project_hash = "b09d9aa6a26a862f14b0f81e7d1a9e2b5881dd11"
+project_hash = "c11c43f566918183fa4c52aa772d5b5b77873f93"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -1678,45 +1560,23 @@ version = "1.9.2+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─8c4c061a-a8ee-11f0-3fa9-dfa9be19d8b9
-# ╟─56c5dc45-1c7f-4b58-b9e6-fccdaf38b518
-# ╟─8926cba3-eebd-4ac7-b4a1-6a4ef94603e4
-# ╠═96d3a166-ad98-498e-a9ae-cfb76207cd3b
-# ╠═52ba4da3-5f0c-46d8-af2b-2cd77581eff4
-# ╠═26e83a52-7e45-4ec8-8872-b66319890590
-# ╠═ec401b61-4229-41de-b6db-ce6207d89711
-# ╠═01e1a626-75c2-4cd5-8266-a5d440905588
-# ╟─da226b68-c767-472f-b2d5-582b6d9393e3
-# ╠═bfb664d9-019a-444d-8686-614d005b27b7
-# ╟─7cedcc39-0856-441e-a956-4144a3dd2bb4
-# ╠═aa49d5d5-4a72-4469-91e3-20c7ae27ccba
-# ╠═27811d93-d0e0-491b-be5a-aeb1fca818b2
-# ╠═6d72a0a4-57ca-40c9-b670-d93edee0a448
-# ╠═87498b94-9aa3-4ca5-ba04-98632127c8ea
-# ╠═82f5fa7f-ae1d-485f-9b5b-7e29c18e935a
-# ╠═3cc94421-e3b4-4043-92b2-2c4aa8917030
-# ╟─73948513-11ff-446c-865a-2166de7215c4
-# ╠═575a99d5-d77c-45f5-90d3-23ff35633655
-# ╠═e99de034-1e26-4ef4-9d63-ceaf364699f2
-# ╠═b09d3fd9-d300-4ebf-97dc-ac1c5fe06e10
-# ╠═255c397f-a2d3-420e-b156-17b05ec2083c
-# ╟─16e62485-e05e-45e4-9a78-9de738cb3197
-# ╠═3fe92b5a-f73d-40e8-8d93-3b244fe838ea
-# ╠═059fcf85-0430-4894-b10e-3bca8cef70e8
-# ╠═064000a9-1de1-4f11-91ed-4d41c0ed11db
-# ╟─e05d0e49-0f9d-48a5-8fce-161295453b8a
-# ╠═ad6f80a1-d596-4ad2-bcb6-80ca394638f6
-# ╠═bc1375a3-9e65-421b-829c-a01e6ab5305f
-# ╟─de04e293-442a-4c25-a904-4ad2c3381dcc
-# ╠═13266118-4ee3-46bb-aeef-2b341dc4bb2a
-# ╠═d03b3166-3dac-4623-8d61-c516afae11d8
-# ╠═e3b7f100-9203-4be7-8dab-ac75c71d40a5
-# ╠═a59e129c-22b7-4f81-b3b5-3185dde41a6d
-# ╠═3d6592a3-4a06-4c9a-b9f3-29e278accab6
-# ╟─47811425-7b5d-41a9-af21-d393a32a1847
-# ╠═afacecce-3392-490d-a7bd-c5d5ad84bcf2
-# ╟─941c8631-093d-4801-b6e2-74be4ad2a594
-# ╠═0e2597b0-64f1-4763-b8fc-f584bf622b98
-# ╠═78edf00c-8e0f-40c6-ba92-03916195af97
+# ╠═01777032-ab5b-11f0-1945-d71872063676
+# ╠═854b20ee-4a64-49fc-95ae-bbdc4b3337e9
+# ╟─d17fb0a3-4f9e-4c23-a4f5-655a74db6803
+# ╟─941adcc2-82eb-43d8-9ca6-e0a619f839b8
+# ╠═b6e88b48-e409-45fd-926f-e93276abd601
+# ╠═199f9de6-d0f8-4930-99a0-fe836571029a
+# ╟─ee5dbfee-5aeb-4f4d-b8ea-6650a6adb0a5
+# ╟─bf2c3622-45eb-47df-a71f-a721ef149940
+# ╠═b55d7055-b86d-495c-bb38-4a6d2e2f7868
+# ╠═ea6091f0-a545-43c3-b159-eb0f6dda628b
+# ╠═ebb5f1a1-47ab-4041-866b-52693787341e
+# ╠═ee61ebcd-7b60-44b3-85eb-2cfd9f5b683e
+# ╠═7de896f0-9e06-4611-92a9-3dc34c2a6df9
+# ╠═7231d5c7-c008-4837-8c54-24cc2d75ba37
+# ╠═7b4ccf6c-5eb7-4e9d-bc77-35766c7fe080
+# ╟─dee98a52-87c7-4470-ae6e-f89a338efa46
+# ╠═54cb725a-1da7-4c78-8403-ce8db17ebabe
+# ╠═0763ea49-58b3-49af-a5b3-89364d6ccc30
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
