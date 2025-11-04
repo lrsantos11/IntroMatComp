@@ -197,7 +197,7 @@ grupo.keymap
 begin
 	plt = plot(title = "Largura x Comprimento Petala", xlabel = "Largura", ylabel = "Comprimento")
 	for df in grupo 
-		@df df scatter!(:PetalLength, :PetalWidth, label = )
+		@df df scatter!(:PetalLength, :PetalWidth)
 	end
 	plt
 end
