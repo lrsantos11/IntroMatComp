@@ -1,213 +1,256 @@
 ### A Pluto.jl notebook ###
-# v0.20.20
+# v0.20.19
 
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 2d507869-9db6-4458-a78e-cd9d9c29cd02
-using Plots, StatsPlots, Distributions
+# ╔═╡ a3d59fea-48fb-4244-bd00-d07dc1a5bbba
+# Pacotes importantes para Análise de Dados
+begin
+	using Plots # Biblioteca de gráficos;
+	using DataFrames  # Estrutura tipo planilha;
+	using StatsPlots # Visualizações estatísticas;
+	using Random # Geração de números aleatórios;
+	using Statistics # Funções como mean, median, etc;
+	using StatsBase  # Estatísticas descritivas;
+end
 
-# ╔═╡ 2ace93f6-b7e4-4f95-a63a-79cdc42ac020
-using CSV, DataFrames
+# ╔═╡ 67489c61-d123-4ee6-9769-52fcf88a0d72
+using RDatasets # Datasets clássicos;
 
-# ╔═╡ 0fb31eb0-b0da-11f0-3103-c908464a7278
+# ╔═╡ 50f675f8-b3ef-11f0-3f3d-a9adb5fc53fc
 md"""
 ## UFSC/Blumenau
 ### MAT4642 - Introdução à Matemática Computacional
 ### Prof. Luiz-Rafael Santos
-### Semana 10 - Aula 02
+### Semana 11 - Aula 01
 """
 
-# ╔═╡ 0509a531-2e5d-468b-976d-181a85baf478
+# ╔═╡ 5aa4baf5-b27a-4a78-8e1c-028c58056a05
 md"""
-### Gráficos em Julia
+## Introdução à Análise Exploratória de Dados (EDA) em Julia
+
+### Introdução
+A Análise Exploratória de Dados (EDA) é uma etapa fundamental na Ciência de Dados. Seu objetivo é entender a estrutura dos dados, identificar padrões, encontrar anomalias e formular hipóteses. Com a linguagem julia, voltada para alto desempenho e cálculo científico, a EDA pode ser feita de forma rápida e eficiente.
 """
 
-# ╔═╡ 3e65a3ce-fa20-41b1-a6a9-ce0f410f1f85
-plot([1,0],[1,1])
-
-# ╔═╡ 224f9421-7634-45ee-b110-166c6cf43023
+# ╔═╡ 800f3c44-0a02-45d5-9a77-d754078673ad
 md"""
-#### Gráfico de espalhamento 
-
-```julia 
-scatter
-```
+### Carregando um Conjunto de Dados
+ - Datasets (conjunto de dados)
 """
 
-# ╔═╡ 548f4b2e-a8ac-41ef-aaef-8b579e9a6131
-let 
-	plot([1,0],[1,1])
-	xP = rand(20)
-	yP = rand(20)
-	scatter!(xP,yP, title = "Título do gráfico")
-end
+# ╔═╡ c8be3165-9676-42d3-8865-83b41d260ddf
+df_iris = dataset("datasets",  "iris")
 
-# ╔═╡ 2bf9157b-f896-4e2f-a2da-3b8b17eaab08
+# ╔═╡ 554b71cb-8b2e-4251-8720-4f30ecd1f437
+first(df_iris, 5) # Visualização inicial das 5 primeiras linhas do dataset.
+
+# ╔═╡ 9db9e1fd-6abc-4dd7-969b-9276f658ffa2
+last(df_iris, 10) # Visualização inicial das 10 úiltimas linhas do dataset.
+
+# ╔═╡ c64c8299-040e-44b5-9636-a7a519d78d58
+size(df_iris) # Tamanho da tabela
+
+# ╔═╡ 3577e38f-f87c-41dc-a542-83f66656db14
+names(df_iris) # Nomes das colunas
+
+# ╔═╡ ad38731f-f827-400c-877f-ff4a2b1b6866
+df_iris.Species #Acessar uma coluna usando ."NomeColuna"
+
+# ╔═╡ 6e6c3dea-626c-4b8f-be3d-23eecc3b0c4e
+unique(df_iris.Species) # Quais valores  categoricos  na coluna
+
+# ╔═╡ e348870b-6216-4628-adb1-b22c7dea94a6
+df_iris.SepalLength
+
+# ╔═╡ 5b3ab241-94c3-4b55-819e-f1fe717d9dfa
+ismissing.(df_iris.SepalLength)
+
+# ╔═╡ 3db71c3b-556f-46ce-b59d-211753402b64
+# using StatsBase, Statistics
+summarystats(df_iris.SepalLength) # Resumo estatístico de dados numéricos
+
+# ╔═╡ 8b87ede3-f8a5-46dc-b3de-a4dda77bb866
+summarystats(rand(200))
+
+# ╔═╡ 545a268b-3f7e-4e27-9456-8729255c38a3
+describe(df_iris.PetalWidth)
+
+# ╔═╡ 6019fe99-f64d-4b61-9a67-531f1fce0172
 md"""
-#### Gráfico de Densidades
-Um dos gráficos mais básicos (e úteis) para visualização de dados é o gráfico de densidades. Vamos gerando um gráfico de densidade da distribuição Normal com média 0 e variância 1. Para isso, execute:
+As principais medidas descritivas que podemos extrair incluem:
 
+- Média e Mediana: Medidas de tendência central
 
+- Desvio-padrão, Variância e Intervalo Interquartil (IQR): Medidas de dispersão
 """
 
-# ╔═╡ f5c522eb-c545-40a0-ac11-23a6c9a4fbe7
-plot(Normal(0,1), title = "Distribuição normal")
-
-# ╔═╡ 9948b629-e132-4e16-bc87-e7fffce35a5b
-# Distribuição Uniforme
-plot(Uniform(1,10), title = "Distribuição Uniforme")
-
-# ╔═╡ 0ec8dc78-7405-49c3-bb64-9a8e1af53ed7
+# ╔═╡ 9cfb496c-b8d5-4577-bcd7-5aa1e5ad7bb8
 md"""
-#### Graficando funções
+### Correlação entre variáveis
 """
 
-# ╔═╡ 6dbd06d0-7489-4c2d-8f30-3f0ef22d5056
-# Gerar pontos entre 0 e 5
-# Graficar f(x) = log(x)
-#Graficar f(x) = exp(x)
-x = 0.1:.1:5 
-# x = range(0.1,5, length= 10)
+# ╔═╡ a0c57bc7-47b0-4b86-b717-4cca5f699115
+# Calculando a correlação de Pearson entre duas variáveis numéricas, e depois descrevendo uma das colunas
 
-# ╔═╡ 45fbece4-10c4-4243-a086-40da3e90d845
-begin 
-	f(x) = log(x)
-	plt1 = plot(x, f.(x), title = "Gráfico de log(x)", xlabel = "x", ylabel = "log(x)", legend = false)
-	scatter!(x,f.(x))
-end
+correlacao = cor(df_iris.PetalWidth, df_iris.PetalLength)
 
-# ╔═╡ 070baee5-cf25-402a-bca1-aa0a750ecc13
-
-
-# ╔═╡ ab7cd776-a4e7-42b1-a25f-22e1122f9e8b
-begin 
-	g(x) = exp(x)
-	plt2 = plot(x, g.(x), title = "Gráfico de exp(x)", xlabel = "x", ylabel = "exp(x)", legend = false)
-	scatter!(x,g.(x))
-end
-
-# ╔═╡ 7db9b144-ce3e-4c15-a4a3-665e3df51c5f
+# ╔═╡ f57282cf-629a-4f1a-81cd-aa253e9b4c2f
 md"""
-### Grids e Combinações
-Uma ferramenta bastante utilizada na visualização de dados é a junção de gráficos distintos na mesma imagem para facilitar a comparação, ou sobrepor múltiplas curvas em um único gráfico para contrastá-las no mesmo plano. Se você deseja criar o famoso grid (também chamado de malha gráfica), Julia oferece soluções práticas.
+### Manipulação de Dados
+#### Criando novas colunas
 """
 
-# ╔═╡ a34836dd-39fb-4fab-adb1-ff61a9a79701
-plot(plt1, plt2, layout = (2,1))
+# ╔═╡ 17d07ff1-9ac3-4c3d-9a61-0b9187786886
+df_iris.soma_col =  df_iris.SepalWidth + df_iris.SepalLength
 
-# ╔═╡ b1e17e41-e1f4-4e58-bfaf-39d549d8a9dd
+# ╔═╡ f3af717b-f63d-411e-9f0a-c048de6ba9a7
 md"""
-#### Histograma
-Outro recurso valioso na visualização de dados é o histograma, ideal para visualizar a distribuição de uma variável. Vamos construí-lo a partir da criação de uma variável x equivalente a 1000 números aleatórios de uma distribuição Normal(0, 1), executando o seguinte bloco:
+Caso queira adicionar uma nova coluna ao seu dataset, por exemplo, comparar a soma - largura da sépala com a largura da pétala - para cada flor, apenas nomeie a sua nova coluna no formato `dados.nova_coluna = nova_coluna`. É importante ressaltar que `len(nova_coluna) = len(dados.coluna_qualquer)`, ou seja, o tamanho n da coluna (150 observações, no nosso exemplo) tem que ser igual no dataset inteiro.
 
 
 """
 
-# ╔═╡ f0ed65fb-e93a-4c0b-8986-7c81b65c1c63
-let
-	dados = randn(10_000)
-	# Histograma	
-	histogram(dados, title = "Histograma", leg = false, color =  :darkblue )
-end
+# ╔═╡ 3334d0ca-c15a-4105-a706-596bdeecd264
+df_iris
 
-# ╔═╡ b0eaf851-213c-439f-9c08-657008342304
+# ╔═╡ 49aadd5f-edde-4a44-8bd9-ff3ca3a9dbb1
 md"""
-### Boxplot
-Para os estatísticos e cientistas de dados, o pacote Plots.jl oferece suporte ao conhecido boxplot, uma ferramenta eficaz para resumir estatísticas, ver assimetrias e identificar outliers. Ao executar o código abaixo, estaremos gerando dois vetores de 50 números aleatórios cada que, multiplicadas por 5, vão compor o conjunto de dados y.
+### Filtragem de dados
+
 """
 
-# ╔═╡ 7a5a0c24-2231-4c69-b50c-9b09cee5c59f
+# ╔═╡ 48f1fd9c-2b8e-465e-8c4b-c3bdf7beee13
+# Agora vejamos como filtrar valores no nosso dataset
+df_versicolor = filter(linha -> linha.Species == "versicolor" ,df_iris)
+
+# ╔═╡ cab74c9f-9453-426a-94ec-987d84ed5941
+ # Filtrando apenas as flores cujo tamanho (Lenght) da sépala mede mais do que 7cm
+df_flores_grandes = filter(linha -> linha.SepalLength > 7, df_iris)
+
+# ╔═╡ 48e0d579-bab4-461c-9a81-9f3dd4f21301
+# Acessando Dados
+df_iris[1:10, [:SepalLength, :PetalLength, :Species]]
+
+# ╔═╡ 0ae94b13-aaf8-4d1b-81a3-6224ea195e17
+md"""
+Para filtrar nossos dados, podemos usar a função `filter()`, no formato `filter(row ou col -> condição, dados)` e assim criamos uma condição para filtrar as linhas do dataset. Uma alternativa seria usar o formato `dados[condição, :]`.
+"""
+
+# ╔═╡ 30f870c6-d53e-4c7e-8b1a-3a1714f6aebb
+df_iris.SepalLength .> 7
+
+# ╔═╡ 1fbcdb43-de95-430d-b5bb-f917bc411836
+df_flores_grandes1 = df_iris[df_iris.SepalLength .> 7,:]
+
+# ╔═╡ 0291fa8a-695b-4445-a7b2-889fb792584b
+md"""
+### Agrupamento e seleção
+
+"""
+
+# ╔═╡ ef23c951-fc9c-4605-8e3b-c6e0e2153005
+# select(df_iris,[:SepalLength,  :Species])
+df_iris[:, [:SepalLength,  :Species]]
+
+# ╔═╡ 71e76af3-0138-483c-8aa5-84d71d9d4c09
+md"""
+Dataframes agrupados por _Species_.
+
+"""
+
+# ╔═╡ e31add8a-d1b8-4aba-80ae-f0859a4468e3
+grupo = groupby(df_iris, :Species)
+
+# ╔═╡ fa366c42-daa1-438e-8a3d-544e08fed7d4
+grupo[1]
+
+# ╔═╡ a7cb8a50-eb33-4def-a583-95d74973c39d
+grupo[2]
+
+# ╔═╡ e5e14133-0998-4334-96ff-3e049118f222
+grupo[3]
+
+# ╔═╡ 62b3b420-be59-44f5-9b28-6ff698e42cc2
+#Graficar a dispersão de largura e Comprimento de petala
+scatter(df_iris.PetalLength, df_iris.PetalWidth, title = "Largura x Comprimento Petala", xlabel = "Largura", ylabel = "Comprimento", leg = false)
+
+# ╔═╡ eed424bd-b21a-47d5-872b-4bb0e7f83021
+# Usando StatsPlots com DataFarmes
+@df df_iris scatter(:PetalLength, :PetalWidth, title = "Largura x Comprimento Petala", xlabel = "Largura", ylabel = "Comprimento", leg = false)
+
+# ╔═╡ 998457b0-4259-4814-815f-799ef9fe0a9b
+md"""
+#### Atividade
+
+1. Histograma SepalWidth
+2. Espalhamento `versicolor`": SepalLength x SepalWidth
+3. boxplot Species x SepalLength
+4. Espalhamento de cada espécie *emperequetado* com cores e formas distingtas.
+"""
+
+# ╔═╡ 69bc10b9-aabd-409d-9bef-20d1e875b4f6
+grupo.keymap
+
+# ╔═╡ 8b8aa946-cc32-4c5e-bcce-880a95c01873
 begin
-	dados_boxplot = 15* randn(50, 2)
-	boxplot(dados_boxplot, title = "Boxplot", color = [:darkorange :lightpink])
+	plt = plot(title = "Largura x Comprimento Petala", xlabel = "Largura", ylabel = "Comprimento")
+	for df in grupo 
+		@df df scatter!(:PetalLength, :PetalWidth, label = )
+	end
+	plt
 end
 
-# ╔═╡ 36573a8e-f59c-44d0-88f0-476c893705d8
+# ╔═╡ 2e597f96-32d9-45cb-8e3e-1cef5055992d
+# Alternativa para o gráfico acima
+@df df_iris scatter(:PetalLength, :PetalWidth, title = "Largura x Comprimento Petala", xlabel = "Largura", ylabel = "Comprimento", 
+				   group = :Species,
+				   m = [:hex :star7 :diamond])
+
+# ╔═╡ 5696662e-5934-4674-9f46-debb410c1d31
+# Calculando média de largura da Sepala  por media (combinado dados por grupo)
+media_grupo  = combine(grupo, :SepalWidth => mean => :MediaSepala)
+
+# ╔═╡ e7722d2b-9265-42af-9cc4-fab81c679715
+@df media_grupo bar(:Species, :MediaSepala, 
+			  xlabel = "Espécie",
+			  ylabel = "Média da Sepala",
+			  title = "Média da largura da Sepala, por espécie",
+			  leg = false)
+
+# ╔═╡ 7cd09677-f5d2-45d1-896b-2ae0b2eaa981
 md"""
-### Gráfico de Pizza
-Tudo bem se você preferir os gráficos de pizza, eles ainda têm seu charme! 🎉 O bloco a seguir cria um gráfico de pizza utilizando a paleta de cores :tab10, que já vem disponível por padrão no pacote Plots.jl.
-"""
-
-# ╔═╡ 70d5c3e2-7c60-433e-b743-a52ce76fbc9c
-begin
-	cursos = ["MAT", "ECA", "EMT", "QUI", "ETX"]
-	estudantes = [100, 24, 33, 72, 5]
-	@info sum(estudantes)
-	pie(cursos, estudantes, title = "Quantidade de estudantes ... por curso")
-end
-
-# ╔═╡ 62ea98a3-3e4e-467c-bd5a-ec35d13c4f35
-md"""
-#### Lendo arquivos CSV e plotando
-- CSV significa "comma separated values" - valores separados por vírgula
-"""
-
-# ╔═╡ 0766c441-b5ca-45eb-88a4-f1a877fcb7d2
-df_metrosp = CSV.read("../assets/metrosp_stations.csv", DataFrame)
-
-# ╔═╡ 56f87482-7249-4bc2-bdc7-8b0975c47212
-names(df_metrosp)
-
-# ╔═╡ f8b6b971-dd1d-4041-a815-77510be576a9
-# gráfico de espalhamnto com lat e lon das estações de metro
-begin
-	lat_metro = df_metrosp.lat
-	lon_metro = df_metrosp.lon
-	plt_metro = scatter(lat_metro, lon_metro, leg = true, label = "Estações SP",
-						marker = :star, title = "Estações de metro de São Paulo", axis = false #retira eixos do gráfico
-					   )
-end
-
-# ╔═╡ 954dceb6-d0cd-42c1-b112-b39f615e9943
-savefig(plt_metro, "metro sp.pdf")
-
-# ╔═╡ c41e1742-6288-49cd-9936-6d31c717bf4f
-md"""
-### Como salvar o gráfico?
-Por fim, você pode salvar o gráfico no diretório do seu projeto utilizando o seguinte comando:
+### Atividade
+5. Com os dados agrupados por espécie calcular medianas (`median`) de largura e comprimento de pétala
 
 """
 
-# ╔═╡ be18c08c-0dee-4ac7-b081-620627023efc
-	plt_salvar = plot(randn(20,2), leg = :topright,
-					  label  = ["Tipo 1" "Tipo 2"],
-					  title = "Gráfico qualquer",
-					  lw = 2, #linewidth -> espessura da linha
-					  ls = [:dash :dashdot] 
-					 )
+# ╔═╡ 31ed8f19-ea46-449b-a262-0675c1733197
+mediana_grupo  = combine(grupo, :PetalWidth => median => :MedianaLargura, :PetalLength => median => :MedianaComprimento)
 
-# ╔═╡ e9166b69-bd42-41c0-8ec4-fdbcba7aa8f0
-md"""
-```julia
-:solid      #linha sólida
-:dash       #tracejado
-:dot        #pontos
-:dashdot    #tracejado seguido de um ponto
-:dashdotdot #tracejado seguido de dois pontos
-```
-"""
-
-# ╔═╡ 4c5a0a3d-68b3-46a1-b1d7-6695bebccf42
-begin
- savefig(plt_salvar, "grafico1.png")
-	savefig(plt_salvar, "grafico1.pdf")
-end
+# ╔═╡ 98823cc5-30d3-473a-b7c2-3a684948c7ff
+@df mediana_grupo groupedbar(:Species, [:MedianaComprimento :MedianaLargura], 
+			  xlabel = "Espécie",
+			  ylabel = "Mediana da Pétala",
+			  title = "Mediana da largura e comprimento da Pétala, por espécie")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+RDatasets = "ce6b1742-4840-55fa-b093-852dadbb1d8b"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 
 [compat]
-CSV = "~0.10.15"
 DataFrames = "~1.8.1"
-Distributions = "~0.25.122"
 Plots = "~1.41.1"
+RDatasets = "~0.7.7"
+StatsBase = "~0.34.7"
 StatsPlots = "~0.15.8"
 """
 
@@ -217,7 +260,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.11.6"
 manifest_format = "2.0"
-project_hash = "d447e5a7eab7e0b28d51b2dfad4114d62dc2caab"
+project_hash = "8874dd7d30c55463bcbd866ffcb2109cda92ed93"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -299,6 +342,12 @@ deps = ["Artifacts", "Bzip2_jll", "CompilerSupportLibraries_jll", "Fontconfig_jl
 git-tree-sha1 = "fde3bf89aead2e723284a8ff9cdf5b551ed700e8"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.18.5+0"
+
+[[deps.CategoricalArrays]]
+deps = ["DataAPI", "Future", "Missings", "Printf", "Requires", "Statistics", "Unicode"]
+git-tree-sha1 = "5084cc1a28976dd1642c9f337b28a3cb03e0f7d2"
+uuid = "324d7699-5711-5eae-9e2f-1d82baa6b597"
+version = "0.10.7"
 
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra"]
@@ -484,6 +533,11 @@ git-tree-sha1 = "27af30de8b5445644e8ffe3bcb0d72049c089cf1"
 uuid = "2e619515-83b5-522b-bb60-26c02a35a201"
 version = "2.7.3+0"
 
+[[deps.ExprTools]]
+git-tree-sha1 = "27415f162e6028e81c72b82ef756bf321213b6ec"
+uuid = "e2ba6199-217a-4e67-a87a-7c52f15ade04"
+version = "0.1.10"
+
 [[deps.FFMPEG]]
 deps = ["FFMPEG_jll"]
 git-tree-sha1 = "83dc665d0312b41367b7263e8a4d172eac1897f4"
@@ -507,6 +561,16 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "6d6219a004b8cf1e0b4dbe27a2860b8e04eba0be"
 uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
 version = "3.3.11+0"
+
+[[deps.FileIO]]
+deps = ["Pkg", "Requires", "UUIDs"]
+git-tree-sha1 = "d60eb76f37d7e5a40cc2e7c36974d864b82dc802"
+uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+version = "1.17.1"
+weakdeps = ["HTTP"]
+
+    [deps.FileIO.extensions]
+    HTTPExt = "HTTP"
 
 [[deps.FilePathsBase]]
 deps = ["Compat", "Dates"]
@@ -913,6 +977,12 @@ version = "1.2.0"
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 version = "1.11.0"
 
+[[deps.Mocking]]
+deps = ["Compat", "ExprTools"]
+git-tree-sha1 = "2c140d60d7cb82badf06d8783800d0bcd1a7daa2"
+uuid = "78c3b35d-d492-501b-9361-3d52fe80e533"
+version = "0.8.1"
+
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 version = "2023.12.12"
@@ -1138,6 +1208,18 @@ version = "2.11.2"
     [deps.QuadGK.weakdeps]
     Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 
+[[deps.RData]]
+deps = ["CategoricalArrays", "CodecZlib", "DataFrames", "Dates", "FileIO", "Requires", "TimeZones", "Unicode"]
+git-tree-sha1 = "19e47a495dfb7240eb44dc6971d660f7e4244a72"
+uuid = "df47a6cb-8c03-5eed-afd8-b6050d6c41da"
+version = "0.8.3"
+
+[[deps.RDatasets]]
+deps = ["CSV", "CodecZlib", "DataFrames", "FileIO", "Printf", "RData", "Reexport"]
+git-tree-sha1 = "2720e6f6afb3e562ccb70a6b62f8f308ff810333"
+uuid = "ce6b1742-4840-55fa-b093-852dadbb1d8b"
+version = "0.7.7"
+
 [[deps.REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "StyledStrings", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
@@ -1362,6 +1444,12 @@ deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.3"
 
+[[deps.TZJData]]
+deps = ["Artifacts"]
+git-tree-sha1 = "72df96b3a595b7aab1e101eb07d2a435963a97e2"
+uuid = "dc5dba14-91b3-4cab-a142-028a31da12f7"
+version = "1.5.0+2025b"
+
 [[deps.TableOperations]]
 deps = ["SentinelArrays", "Tables", "Test"]
 git-tree-sha1 = "e383c87cf2a1dc41fa30c093b2a19877c83e1bc1"
@@ -1395,6 +1483,16 @@ version = "0.1.1"
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 version = "1.11.0"
+
+[[deps.TimeZones]]
+deps = ["Artifacts", "Dates", "Downloads", "InlineStrings", "Mocking", "Printf", "Scratch", "TZJData", "Unicode", "p7zip_jll"]
+git-tree-sha1 = "06f4f1f3e8ff09e42e59b043a747332e88e01aba"
+uuid = "f269a46b-ccf7-5d73-abea-4c690281aa53"
+version = "1.22.1"
+weakdeps = ["RecipesBase"]
+
+    [deps.TimeZones.extensions]
+    TimeZonesRecipesBaseExt = "RecipesBase"
 
 [[deps.TranscodingStreams]]
 git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"
@@ -1723,37 +1821,54 @@ version = "1.9.2+0"
 """
 
 # ╔═╡ Cell order:
-# ╠═0fb31eb0-b0da-11f0-3103-c908464a7278
-# ╟─0509a531-2e5d-468b-976d-181a85baf478
-# ╠═2d507869-9db6-4458-a78e-cd9d9c29cd02
-# ╠═3e65a3ce-fa20-41b1-a6a9-ce0f410f1f85
-# ╟─224f9421-7634-45ee-b110-166c6cf43023
-# ╠═548f4b2e-a8ac-41ef-aaef-8b579e9a6131
-# ╟─2bf9157b-f896-4e2f-a2da-3b8b17eaab08
-# ╠═f5c522eb-c545-40a0-ac11-23a6c9a4fbe7
-# ╠═9948b629-e132-4e16-bc87-e7fffce35a5b
-# ╟─0ec8dc78-7405-49c3-bb64-9a8e1af53ed7
-# ╠═6dbd06d0-7489-4c2d-8f30-3f0ef22d5056
-# ╠═45fbece4-10c4-4243-a086-40da3e90d845
-# ╠═070baee5-cf25-402a-bca1-aa0a750ecc13
-# ╠═ab7cd776-a4e7-42b1-a25f-22e1122f9e8b
-# ╟─7db9b144-ce3e-4c15-a4a3-665e3df51c5f
-# ╠═a34836dd-39fb-4fab-adb1-ff61a9a79701
-# ╟─b1e17e41-e1f4-4e58-bfaf-39d549d8a9dd
-# ╠═f0ed65fb-e93a-4c0b-8986-7c81b65c1c63
-# ╟─b0eaf851-213c-439f-9c08-657008342304
-# ╠═7a5a0c24-2231-4c69-b50c-9b09cee5c59f
-# ╟─36573a8e-f59c-44d0-88f0-476c893705d8
-# ╠═70d5c3e2-7c60-433e-b743-a52ce76fbc9c
-# ╟─62ea98a3-3e4e-467c-bd5a-ec35d13c4f35
-# ╠═2ace93f6-b7e4-4f95-a63a-79cdc42ac020
-# ╠═0766c441-b5ca-45eb-88a4-f1a877fcb7d2
-# ╠═56f87482-7249-4bc2-bdc7-8b0975c47212
-# ╠═f8b6b971-dd1d-4041-a815-77510be576a9
-# ╠═954dceb6-d0cd-42c1-b112-b39f615e9943
-# ╟─c41e1742-6288-49cd-9936-6d31c717bf4f
-# ╠═be18c08c-0dee-4ac7-b081-620627023efc
-# ╟─e9166b69-bd42-41c0-8ec4-fdbcba7aa8f0
-# ╠═4c5a0a3d-68b3-46a1-b1d7-6695bebccf42
+# ╟─50f675f8-b3ef-11f0-3f3d-a9adb5fc53fc
+# ╟─5aa4baf5-b27a-4a78-8e1c-028c58056a05
+# ╠═a3d59fea-48fb-4244-bd00-d07dc1a5bbba
+# ╟─800f3c44-0a02-45d5-9a77-d754078673ad
+# ╠═67489c61-d123-4ee6-9769-52fcf88a0d72
+# ╠═c8be3165-9676-42d3-8865-83b41d260ddf
+# ╠═554b71cb-8b2e-4251-8720-4f30ecd1f437
+# ╠═9db9e1fd-6abc-4dd7-969b-9276f658ffa2
+# ╠═c64c8299-040e-44b5-9636-a7a519d78d58
+# ╠═3577e38f-f87c-41dc-a542-83f66656db14
+# ╠═ad38731f-f827-400c-877f-ff4a2b1b6866
+# ╠═6e6c3dea-626c-4b8f-be3d-23eecc3b0c4e
+# ╠═e348870b-6216-4628-adb1-b22c7dea94a6
+# ╠═5b3ab241-94c3-4b55-819e-f1fe717d9dfa
+# ╠═3db71c3b-556f-46ce-b59d-211753402b64
+# ╠═8b87ede3-f8a5-46dc-b3de-a4dda77bb866
+# ╠═545a268b-3f7e-4e27-9456-8729255c38a3
+# ╟─6019fe99-f64d-4b61-9a67-531f1fce0172
+# ╟─9cfb496c-b8d5-4577-bcd7-5aa1e5ad7bb8
+# ╠═a0c57bc7-47b0-4b86-b717-4cca5f699115
+# ╟─f57282cf-629a-4f1a-81cd-aa253e9b4c2f
+# ╠═17d07ff1-9ac3-4c3d-9a61-0b9187786886
+# ╟─f3af717b-f63d-411e-9f0a-c048de6ba9a7
+# ╠═3334d0ca-c15a-4105-a706-596bdeecd264
+# ╟─49aadd5f-edde-4a44-8bd9-ff3ca3a9dbb1
+# ╠═48f1fd9c-2b8e-465e-8c4b-c3bdf7beee13
+# ╠═cab74c9f-9453-426a-94ec-987d84ed5941
+# ╠═48e0d579-bab4-461c-9a81-9f3dd4f21301
+# ╟─0ae94b13-aaf8-4d1b-81a3-6224ea195e17
+# ╠═30f870c6-d53e-4c7e-8b1a-3a1714f6aebb
+# ╠═1fbcdb43-de95-430d-b5bb-f917bc411836
+# ╟─0291fa8a-695b-4445-a7b2-889fb792584b
+# ╠═ef23c951-fc9c-4605-8e3b-c6e0e2153005
+# ╟─71e76af3-0138-483c-8aa5-84d71d9d4c09
+# ╠═e31add8a-d1b8-4aba-80ae-f0859a4468e3
+# ╠═fa366c42-daa1-438e-8a3d-544e08fed7d4
+# ╠═a7cb8a50-eb33-4def-a583-95d74973c39d
+# ╠═e5e14133-0998-4334-96ff-3e049118f222
+# ╠═62b3b420-be59-44f5-9b28-6ff698e42cc2
+# ╠═eed424bd-b21a-47d5-872b-4bb0e7f83021
+# ╟─998457b0-4259-4814-815f-799ef9fe0a9b
+# ╠═69bc10b9-aabd-409d-9bef-20d1e875b4f6
+# ╠═8b8aa946-cc32-4c5e-bcce-880a95c01873
+# ╠═2e597f96-32d9-45cb-8e3e-1cef5055992d
+# ╠═5696662e-5934-4674-9f46-debb410c1d31
+# ╠═e7722d2b-9265-42af-9cc4-fab81c679715
+# ╟─7cd09677-f5d2-45d1-896b-2ae0b2eaa981
+# ╠═31ed8f19-ea46-449b-a262-0675c1733197
+# ╠═98823cc5-30d3-473a-b7c2-3a684948c7ff
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
