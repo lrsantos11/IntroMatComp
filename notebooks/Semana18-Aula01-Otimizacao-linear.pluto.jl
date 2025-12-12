@@ -16,187 +16,233 @@ macro bind(def, element)
     #! format: on
 end
 
-# ╔═╡ 8cfd4d11-b4c8-4b92-bd36-d6c5f90f26c8
+# ╔═╡ f855ffb8-4ab2-4a8a-87fa-078fa2e52b7f
 begin
-	using JuMP #Modelagem Matemática (Julia Mathematical Programming)
-	using HiGHS # Solver de Programação Linear Open source
 	using Plots
+	using Random # Para gerar dados com ruído
 	using PlutoUI
 end
 
-# ╔═╡ d4fe42a4-cf1a-11f0-926b-a9c86a22502c
+# ╔═╡ c994fb11-f652-4e69-bb6a-95bd4f2b4c4a
+begin
+	using JuMP
+	using Ipopt
+end
+
+# ╔═╡ cdd341db-8331-4d85-8d61-fc082f5bb6a2
+begin
+	using LinearAlgebra
+	using Statistics
+end
+
+# ╔═╡ 62ad8da6-d189-11f0-85ae-25fa9fb796b3
 md"""
 ## UFSC/Blumenau
 ### MAT4642 - Introdução à Matemática Computacional
 ### Prof. Luiz-Rafael Santos
-### Semana 17 - Aula 01
+### Semana 18 - Aula 01
 """
 
-# ╔═╡ 96428adf-9fff-4b78-881b-64a089c0c64d
+# ╔═╡ 758689fe-ba1f-4420-8f76-7bc380e2554c
 md"""
-# 🍺 Otimização na Cervejaria _OtimizaBier_ de Blumenau/SC
-## Introdução à Modelagem com JuMP
+# 📉 Previsão de Demanda: Otimização Não-Linear
+
+Na aula passada, usamos Programação Linear para decidir **quanto produzir**.
+Hoje, vamos usar Otimização Não-Linear para descobrir **como o mercado se comporta**.
+
+### O Cenário
+O Pedro lançou a cerveja **Bock** há 10 semanas. As vendas começaram devagar, aceleraram muito e agora parecem querer estabilizar. Ele precisa prever qual será a demanda máxima ($L$) para não comprar tanques desnecessários.
+
+Como o comportamento não é uma reta, não podemos usar `HiGHS`. Precisamos de um solver capaz de lidar com curvas: o **Ipopt**.
 """
 
-# ╔═╡ 56de9f54-57e4-4f28-8716-0c979613a115
+# ╔═╡ 473502d5-2f41-4803-8f94-e17090649f6b
+
+
+# ╔═╡ a5db9488-641f-4f82-b2a4-9489b34e3e6d
 md"""
-### O Problema da Semana
+### 📜 O Modelo Logístico (A Curva em S)
 
-Você é o gerente de produção da *OtimizaBier*, uma microcervejaria localizada no Garcia, perto das nascentes da Nova Rússia. Vocês produzem dois tipos de cerveja:
+Antes de tentar prever as vendas, precisamos entender o comportamento do mercado.
+No início do século XIX, **Thomas Malthus** propôs que populações (ou vendas) crescem exponencialmente ($N(t) = N_0 e^{rt}$). Isso funciona no início, mas ignora um fato básico: **o mercado é finito**.
 
-1.  **IPA (India Pale Ale):** Lucro de **R$ 5,00** por litro.
-2.  **Pilsen:** Lucro de **R$ 3,00** por litro.
+Em 1838, o matemático belga **Pierre François Verhulst** corrigiu isso introduzindo a **Equação Logística**. Ele percebeu que, à medida que a população cresce, a resistência aumenta (concorrência, saturação de mercado) e o crescimento desacelera.
 
-Para a produção desta semana, você tem os seguintes estoques limitados:
-* **Malte:** 75 kg.
-* **Lúpulo:** 100 g.
-* **Água da Nova Rússia:** Devido a limitações de transporte do caminhão-pipa, só conseguimos buscar **70 Litros** dessa água especial por semana.
 
-**Receitas (Consumo por Litro):**
 
-|Ingrediente         | IPA ($x_1$)    | Pilsen ($x_2$) | Estoque Total |
-|:-------------|:----------|:--------------------------|:--------------------------|
-| Malte | 2 kg | 1 kg | **75 kg** |
-| Lúpulo | 4 g | 1 g | **100 g** |
-| Água | 1 L | 1 L | **70 L** |s
+[Image of logistic growth curve diagram]
 
-**Objetivo:** Decidir quantos litros de IPA ($x_1$) e Pilsen ($x_2$) produzir para **MAXIMIZAR O LUCRO**.
 
+#### A Fórmula Matemática
+A função que descreve esse comportamento (e que vamos ajustar aos nossos dados) é:
+
+$$N(t) = \frac{L}{1 + e^{-k(t - t_0)}}$$
+
+Onde os parâmetros que o `JuMP` terá que descobrir são:
+
+1.  **$L$ (Capacidade de Suporte):** É o "teto" da curva. No nosso caso, representa o **total máximo de clientes** que consomem Bock em Blumenau. A curva nunca ultrapassa esse valor.
+2.  **$k$ (Taxa de Crescimento):** A inclinação da subida. Quanto maior o $k$, mais rápida é a explosão de vendas ("viralização").
+3.  **$t_0$ (Ponto de Inflexão):** O momento no tempo onde o crescimento atinge seu pico e começa a desacelerar (o meio da curva S).
 """
 
-# ╔═╡ 24e44249-8e7a-446e-ac4e-9947d2c35558
+# ╔═╡ c32df3c9-2d12-408b-a384-2d4983784af0
+begin
+	# Função auxiliar apenas para plotar a teoria
+	f_teorica(t, L, k, t0) = L / (1 + exp(-k * (t - t0)))
+	
+end
+
+# ╔═╡ 7a894848-f550-4b29-a72e-6cd7bdc20f19
 md"""
-### 1. Modelo Matemático
+	**Simulador da Curva Logística (Entenda os Parâmetros):**
+	
+	* Capacidade $L$: $(@bind L_demo Slider(1000:100:6000, default=5000, show_value=true))
+	* Velocidade $k$: $(@bind k_demo Slider(0.1:0.1:2.0, default=0.8, show_value=true))
+	* Centro $t_0$: $(@bind t0_demo Slider(0:1:15, default=6, show_value=true))
+	
+	"""
+
+# ╔═╡ 3d435513-28d4-45bb-abd6-800f70b30fd8
+begin
+		# Plota a curva baseada nos sliders acima
+		t_range = 0:0.1:15
+		plot(t_range, t -> f_teorica(t, L_demo, k_demo, t0_demo), 
+			 label="Curva Teórica", linewidth=3, color=:purple,
+			 xlabel="Tempo", ylabel="Vendas", 
+			 title="Comportamento da Função Logística",
+			 ylims=(0, 6500)
+		)
+		# Marca o teto L
+		hline!([L_demo], linestyle=:dash, color=:gray, label="Teto L")
+		# Marca o centro t0
+		vline!([t0_demo], linestyle=:dot, color=:gray, label="Centro t0")
+	end
+
+# ╔═╡ adfa44dc-42fb-415b-9695-257479ae2bd1
+begin
+	# Semente para garantir que todos alunos tenham os mesmos "dados aleatórios"
+	Random.seed!(1985922)
+
+	# Função "Verdadeira" (que o Pedro não conhece, mas nós sim)
+	L_real = 5000.0  # Teto de 5000 Litros
+	k_real = 0.8     # Crescimento rápido
+	t0_real = 6.0    # Pico na semana 6
+	
+	logistica(t, L, k, t0) = L / (1 + exp(-k * (t - t0)))
+
+	# Gerando dados para 10 semanas com Ruído (erro de medição)
+	semanas = 1:10
+	vendas_observadas = [logistica(t, L_real, k_real, t0_real) + 200*randn() for t in semanas]
+
+	# Garantindo que não haja vendas negativas por causa do ruído
+	vendas_observadas = max.(0, vendas_observadas)
+
+	scatter(semanas, vendas_observadas, 
+		label="Vendas Observadas", 
+		xlabel="Semana", ylabel="Litros Vendidos",
+		title="Histórico de Vendas da Bock",
+		legend=:bottomright, color=:blue)
+end
+
+# ╔═╡ a86a6b7a-e7a8-4494-bf40-c9cb2051f891
+md"""
+### 🎯 O Objetivo: Mínimos Quadrados Não-Lineares
+
+Como o computador descobre a "melhor" curva? Ele usa o mesmo princípio da Regressão Linear que vocês já viram, mas adaptado.
+
+Imagine que, para um conjunto de parâmetros chutados \((L, k, t_0)\), a curva passe longe dos pontos reais. Dizemos que existe um **Resíduo** (erro) para cada semana:
 
 ```math
-\begin{aligned}
-\text{Maximizar } \quad & Z = 5x_1 + 3x_2 \\
-\text{Sujeito a:} \quad & \\
-& 2x_1 + 1x_2 \le 75 \quad \text{(Restrição de Malte)} \\
-& 4x_1 + 1x_2 \le 100 \quad \text{(Restrição de Lúpulo)} \\
-& 1x_1 + 1x_2 \le 70 \quad \text{(Restrição da Água Nova Rússia)} \\
-& x_1, x_2 \ge 0 \quad \quad \text{(Não-negatividade)}
-\end{aligned}
+e_i = \text{Venda}_{\text{Real}} - \text{Venda}_{\text{Modelo}}(t_i)
 ```
+
+
+
+
+O objetivo do nosso otimizador será encontrar os valores de $L, k$ e $t_0$ que tornem a **Soma dos Quadrados dos Resíduos (SSE)** a menor possível.
+
+#### A Função Objetivo
+É isso que vamos escrever dentro do `JuMP` na próxima célula:
+
+```math
+\min \sum_{i=1}^{10} \left( \underbrace{y_i}_{\text{Dado Real}} - \underbrace{\frac{L}{1 + e^{-k(t_i - t_0)}}}_{\text{Nosso Modelo}} \right)^2
+```
+
+**Diferença Importante:** Na regressão linear ($y = ax+b$), existe uma fórmula direta para achar o mínimo. Aqui, como a função é complexa (exponencial no denominador), não existe fórmula mágica. Precisamos de um algoritmo (o Solver **Ipopt**) que "desce o morro" do erro iterativamente até achar o fundo do vale.
 """
 
-# ╔═╡ 2e982223-71d7-48da-bb0d-ff3bbd859af0
+# ╔═╡ 4eb2330e-e6f6-44f0-b9b2-2f3bf2565682
+
+
+# ╔═╡ 243bd1ca-81b4-466b-94ca-7ccdef2dcd7d
 begin
-	# 1. Criar o modelo escolhendo o Solver (HiGHS)
-	cervejaria = Model(HiGHS.Optimizer)
+	# Criar um range maior para prever o futuro (até semana 15)
+	t_futuro = 0:0.1:15
+	
+	# Calcular a curva usando os parâmetros otimizados pelo JuMP
+	vendas_previstas = logistica.(t_futuro, value(L), value(k), value(t0))
 
-	# 2. Definir as Variáveis de Decisão (com limites inferiores)
-	@variable(cervejaria, ipa ≥ 0) # IPA
-	@variable(cervejaria, pilsen ≥ 0) # Pilsen
+	# Plotar
+	p = scatter(semanas, vendas_observadas, label="Dados Históricos", color=:blue)
+	plot!(p, t_futuro, vendas_previstas, label="Modelo Ajustado (Ipopt)", color=:red, linewidth=3)
+	
+	# Marcar o Teto
+	hline!([value(L)], label="Teto de Mercado Estimado", linestyle=:dash, color=:gray)
 
-	# 3. Definir a Função Objetivo (Maximizar Lucro)
-	@objective(cervejaria, Max, 5*ipa + 3*pilsen)
-
-	# 4. Adicionar as Restrições
-	# Dica didática: Nomear as restrições ajuda a debuggar e ler o Dual depois
-	@constraint(cervejaria, c_malte,  2*ipa + 1*pilsen ≤ 75)
-	@constraint(cervejaria, c_lupulo, 4*ipa + 1*pilsen ≤ 100)
-	@constraint(cervejaria, c_agua,   1*ipa + 1*pilsen ≤ 70)
-
-	# 5. Otimizar (O Solver trabalha aqui)
-	optimize!(cervejaria)
+	title!("Previsão de Vendas - Modelo Logístico")
+	xlabel!("Semanas")
+	ylabel!("Vendas (Litros)")
 end
 
-# ╔═╡ de0b34f2-0bb4-47c4-92d8-a3337f583552
-	# Retornando um texto formatado para o aluno ver o resultado
-md"""
-### 🏁 Solução Ótima Encontrada:
-
-* **IPA ($x_1$):** $(value(ipa)) Litros
-* **Pilsen ($x_2$):** $(value(pilsen)) Litros
-* **LUCRO MÁXIMO:** R$ $(objective_value(cervejaria))
+# ╔═╡ 4222a8df-a87b-4f06-a9df-cf90930ead71
 
 
+# ╔═╡ 020a98a4-93e0-474a-b5f2-583edd927345
 
-#### Análise de Estoque
-- Malte usado: $(value(2*ipa + pilsen)) / 75
-- Lúpulo usado: $(value(4*ipa + pilsen)) / 100
-- Água usada:  $(value(ipa + pilsen)) / 70
 
-"""
+# ╔═╡ a9a7ed94-22c5-453c-a95b-3b4a23ae0ef9
 
-# ╔═╡ 8104d2c1-9f65-4fb2-83a3-028a91ea287b
-value(ipa)
 
-# ╔═╡ a49cf50e-4f25-4dc5-806c-077dba52f835
-value(pilsen)
+# ╔═╡ 43629dc0-6beb-433e-8270-7773d81c7066
 
-# ╔═╡ 159294ba-d4b2-4068-aac5-4df2ca604b14
-objective_value(cervejaria)
 
-# ╔═╡ cebdb37b-0199-4a81-8dce-ea264612ca92
-begin
-	# Isolando x2 nas equações para plotar (y = mx + b)
-	
-	# Malte: 2x1 + x2 <= 75  -> x2 <= 75 - 2x1
-	r_malte(x) = 75 - 2x
-	
-	# Lúpulo: 4x1 + x2 <= 100 -> x2 <= 100 - 4x1
-	r_lupulo(x) = 100 - 4x
-	
-	# Água: x1 + x2 <= 70    -> x2 <= 70 - x1
-	r_agua(x) = 70 - x
-	
-	# Função que define o teto da Região Viável
-	# É o MÍNIMO de todas as restrições (e deve ser maior que zero)
-	regiao_viavel(x) = max(0, min(r_malte(x), r_lupulo(x), r_agua(x)))
-end
+# ╔═╡ e82180aa-34c0-4496-9855-e0cf53704c87
 
-# ╔═╡ 34042f00-995a-4e84-bdf2-dcf043431211
-@bind lucro_alvo Slider(0:400, default=400, show_value=true)
 
-# ╔═╡ 796bc66c-16cc-4e80-b756-73ab3e2930d5
-begin
-	# Definindo o domínio do gráfico (eixo X)
-	x_range = 0:30
-	
-	# Criando o plot base
-	p = plot(title="Região Viável e Solução Ótima", 
-			 xlabel="Litros de IPA (ipa)", ylabel="Litros de Pilsen (pilsen)", 
-			 legend=:topright, size=(600,400))
+# ╔═╡ e78c1cf1-daa7-4f83-974d-8e4579c8a4a5
 
-	# 1. Plotar a Região Viável (Preenchida)
-	plot!(regiao_viavel, 0, 30, fillrange=0, fillalpha=0.2, 
-		  color=:pink, label="Região Viável", linewidth=0)
 
-	# 2. Plotar as linhas das restrições (Tracejadas)
-	plot!(p, x_range, r_malte,  label="Restrição Malte",  style=:dash, color=:red)
-	plot!(p, x_range, r_lupulo, label="Restrição Lúpulo", style=:dash, color=:green)
-	plot!(p, x_range, r_agua,   label="Restrição Água",   style=:dash, color=:blue, linewidth=2)
+# ╔═╡ f7d5bb56-66b0-4250-8284-36915f41e3b6
 
-	# 3. Plotar a Reta de Lucro (Isolucro) baseada no Slider
-	# Z = 5x1 + 3x2  ->  3x2 = Z - 5x1  ->  x2 = (Z - 5x1)/3
-	r_lucro(x) = (lucro_alvo - 5x)/3
-	plot!(p, x_range, r_lucro, label="Lucro Z = $(lucro_alvo)", color=:orange, linewidth=2)
 
-	# 4. Marcar o Ponto Ótimo encontrado pelo JuMP
-	scatter!(p, [value(ipa)], [value(pilsen)], label="SOLUÇÃO ÓTIMA", 
-			 color=:black, markersize=6)
+# ╔═╡ b17e4e48-ddf7-4a53-a30a-8308d11ff229
 
-	# Ajustando limites para focar na área de interesse
-	plot!(p, xlims=(0, 30), ylims=(0, 110))
-	
-	p
-end
 
-# ╔═╡ be8df83e-37de-42b3-9415-ed847df4a24f
+# ╔═╡ 361a991a-017a-4e9f-a469-c334dccef2e9
+
+
+# ╔═╡ 9f00a13c-01fa-49ad-ba59-0a3841b624db
+
+
+# ╔═╡ 32667776-1844-4257-942b-6649285db771
+
+
+# ╔═╡ b3d4a2da-6aed-43fe-990a-af0c3ce74d04
 
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
+Ipopt = "b6b21f68-93f8-5de0-b562-5493be1d77c9"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-HiGHS = "~1.19.0"
+Ipopt = "~1.11.0"
 JuMP = "~1.29.1"
 Plots = "~1.41.1"
 PlutoUI = "~0.7.75"
@@ -208,7 +254,13 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.12.2"
 manifest_format = "2.0"
-project_hash = "ce2c9a0598ffb1bf846f92f49e780ba41fcd1cfd"
+project_hash = "9da25c342174554885fb92007d1f13b24b604981"
+
+[[deps.ASL_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "6252039f98492252f9e47c312c8ffda0e3b9e78d"
+uuid = "ae81ac8f-d209-56e5-92de-9978fef736f9"
+version = "0.1.3+0"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -517,17 +569,11 @@ git-tree-sha1 = "f923f9a774fcf3f5cb761bfa43aeadd689714813"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "8.5.1+0"
 
-[[deps.HiGHS]]
-deps = ["HiGHS_jll", "MathOptIIS", "MathOptInterface", "PrecompileTools", "SparseArrays"]
-git-tree-sha1 = "3fae2ee8d6ea22009532d5919ff592fcbcab0ad9"
-uuid = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
-version = "1.19.0"
-
-[[deps.HiGHS_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Zlib_jll"]
-git-tree-sha1 = "f56d423e3f583e26ceaef08a15a270b28723c89a"
-uuid = "8fd58aa0-07eb-5a78-9b36-339c94fd15ea"
-version = "1.11.0+1"
+[[deps.Hwloc_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "XML2_jll", "Xorg_libpciaccess_jll"]
+git-tree-sha1 = "3d468106a05408f9f7b6f161d9e7715159af247b"
+uuid = "e33a78d0-f292-5ffc-b300-72abe9b543c8"
+version = "2.12.2+0"
 
 [[deps.Hyperscript]]
 deps = ["Test"]
@@ -551,6 +597,22 @@ version = "1.0.0"
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 version = "1.11.0"
+
+[[deps.Ipopt]]
+deps = ["Ipopt_jll", "LinearAlgebra", "OpenBLAS32_jll", "PrecompileTools"]
+git-tree-sha1 = "ef90a75a3ee8c2b170f6c177d4d003348dd30f67"
+uuid = "b6b21f68-93f8-5de0-b562-5493be1d77c9"
+version = "1.11.0"
+weakdeps = ["MathOptInterface"]
+
+    [deps.Ipopt.extensions]
+    IpoptMathOptInterfaceExt = "MathOptInterface"
+
+[[deps.Ipopt_jll]]
+deps = ["ASL_jll", "Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "MUMPS_seq_jll", "SPRAL_jll", "libblastrampoline_jll"]
+git-tree-sha1 = "b33cbc78b8d4de87d18fcd705054a82e2999dbac"
+uuid = "9cc047cb-c261-5740-88fc-0cf96f7bdcc7"
+version = "300.1400.1900+0"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "b2d91fe939cae05960e760110b328288867b5758"
@@ -759,10 +821,22 @@ git-tree-sha1 = "f00544d95982ea270145636c181ceda21c4e2575"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 version = "1.2.0"
 
+[[deps.METIS_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "2eefa8baa858871ae7770c98c3c2a7e46daba5b4"
+uuid = "d00139f3-1899-568f-a2f0-47f597d42d70"
+version = "5.1.3+0"
+
 [[deps.MIMEs]]
 git-tree-sha1 = "c64d943587f7187e751162b3b84445bbbd79f691"
 uuid = "6c6e2e6c-3030-632d-7369-2d6c69616d65"
 version = "1.1.0"
+
+[[deps.MUMPS_seq_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "METIS_jll", "libblastrampoline_jll"]
+git-tree-sha1 = "fc0c8442887b48c15aec2b1787a5fc812a99b2fd"
+uuid = "d7ed1dd3-d0ae-5e8e-bfb4-87a502085b8d"
+version = "500.800.100+0"
 
 [[deps.MacroTools]]
 git-tree-sha1 = "1e0228a030642014fe5cfe68c2c0a818f9e3f522"
@@ -773,12 +847,6 @@ version = "0.5.16"
 deps = ["Base64", "JuliaSyntaxHighlighting", "StyledStrings"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 version = "1.11.0"
-
-[[deps.MathOptIIS]]
-deps = ["MathOptInterface"]
-git-tree-sha1 = "31d4a6353ea00603104f11384aa44dd8b7162b28"
-uuid = "8c4f8055-bd93-4160-a86b-a0c04941dbff"
-version = "0.1.1"
 
 [[deps.MathOptInterface]]
 deps = ["BenchmarkTools", "CodecBzip2", "CodecZlib", "DataStructures", "ForwardDiff", "JSON3", "LinearAlgebra", "MutableArithmetics", "NaNMath", "OrderedCollections", "PrecompileTools", "Printf", "SparseArrays", "SpecialFunctions", "Test"]
@@ -838,6 +906,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "b6aa4566bb7ae78498a5e68943863fa8b5231b59"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
 version = "1.3.6+0"
+
+[[deps.OpenBLAS32_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "ece4587683695fe4c5f20e990da0ed7e83c351e7"
+uuid = "656ef2d0-ae68-5445-9ca0-591084a874a2"
+version = "0.3.29+0"
 
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
@@ -1041,6 +1115,12 @@ version = "1.3.1"
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 version = "0.7.0"
 
+[[deps.SPRAL_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "Hwloc_jll", "JLLWrappers", "Libdl", "METIS_jll", "libblastrampoline_jll"]
+git-tree-sha1 = "4f9833187a65ead66ed1907b44d5f20606282e3f"
+uuid = "319450e9-13b8-58e8-aa9f-8fd1420848ab"
+version = "2025.5.20+0"
+
 [[deps.Scratch]]
 deps = ["Dates"]
 git-tree-sha1 = "9b81b8393e50b7d4e6d0a9f14e192294d3b7c109"
@@ -1219,6 +1299,12 @@ git-tree-sha1 = "96478df35bbc2f3e1e791bc7a3d0eeee559e60e9"
 uuid = "a2964d1f-97da-50d4-b82a-358c7fce9d89"
 version = "1.24.0+0"
 
+[[deps.XML2_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Zlib_jll"]
+git-tree-sha1 = "80d3930c6347cfce7ccf96bd3bafdf079d9c0390"
+uuid = "02c8fc9c-b97f-50b9-bbe4-9be30ff0a78a"
+version = "2.13.9+0"
+
 [[deps.XZ_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "fee71455b0aaa3440dfdd54a9a36ccef829be7d4"
@@ -1296,6 +1382,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libX11_jll"]
 git-tree-sha1 = "7ed9347888fac59a618302ee38216dd0379c480d"
 uuid = "ea2f1a96-1ddc-540d-b46f-429655e07cfa"
 version = "0.9.12+0"
+
+[[deps.Xorg_libpciaccess_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Zlib_jll"]
+git-tree-sha1 = "4909eb8f1cbf6bd4b1c30dd18b2ead9019ef2fad"
+uuid = "a65dc6b1-eb27-53a1-bb3e-dea574b5389e"
+version = "0.18.1+0"
 
 [[deps.Xorg_libxcb_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libXau_jll", "Xorg_libXdmcp_jll"]
@@ -1475,19 +1567,31 @@ version = "1.9.2+0"
 """
 
 # ╔═╡ Cell order:
-# ╠═d4fe42a4-cf1a-11f0-926b-a9c86a22502c
-# ╟─96428adf-9fff-4b78-881b-64a089c0c64d
-# ╠═8cfd4d11-b4c8-4b92-bd36-d6c5f90f26c8
-# ╟─56de9f54-57e4-4f28-8716-0c979613a115
-# ╟─24e44249-8e7a-446e-ac4e-9947d2c35558
-# ╠═2e982223-71d7-48da-bb0d-ff3bbd859af0
-# ╠═de0b34f2-0bb4-47c4-92d8-a3337f583552
-# ╠═8104d2c1-9f65-4fb2-83a3-028a91ea287b
-# ╠═a49cf50e-4f25-4dc5-806c-077dba52f835
-# ╠═159294ba-d4b2-4068-aac5-4df2ca604b14
-# ╠═cebdb37b-0199-4a81-8dce-ea264612ca92
-# ╠═34042f00-995a-4e84-bdf2-dcf043431211
-# ╠═796bc66c-16cc-4e80-b756-73ab3e2930d5
-# ╠═be8df83e-37de-42b3-9415-ed847df4a24f
+# ╠═62ad8da6-d189-11f0-85ae-25fa9fb796b3
+# ╠═f855ffb8-4ab2-4a8a-87fa-078fa2e52b7f
+# ╟─758689fe-ba1f-4420-8f76-7bc380e2554c
+# ╠═473502d5-2f41-4803-8f94-e17090649f6b
+# ╟─a5db9488-641f-4f82-b2a4-9489b34e3e6d
+# ╠═c32df3c9-2d12-408b-a384-2d4983784af0
+# ╟─7a894848-f550-4b29-a72e-6cd7bdc20f19
+# ╟─3d435513-28d4-45bb-abd6-800f70b30fd8
+# ╠═adfa44dc-42fb-415b-9695-257479ae2bd1
+# ╟─a86a6b7a-e7a8-4494-bf40-c9cb2051f891
+# ╠═c994fb11-f652-4e69-bb6a-95bd4f2b4c4a
+# ╠═4eb2330e-e6f6-44f0-b9b2-2f3bf2565682
+# ╠═243bd1ca-81b4-466b-94ca-7ccdef2dcd7d
+# ╠═cdd341db-8331-4d85-8d61-fc082f5bb6a2
+# ╠═4222a8df-a87b-4f06-a9df-cf90930ead71
+# ╠═020a98a4-93e0-474a-b5f2-583edd927345
+# ╠═a9a7ed94-22c5-453c-a95b-3b4a23ae0ef9
+# ╠═43629dc0-6beb-433e-8270-7773d81c7066
+# ╠═e82180aa-34c0-4496-9855-e0cf53704c87
+# ╠═e78c1cf1-daa7-4f83-974d-8e4579c8a4a5
+# ╠═f7d5bb56-66b0-4250-8284-36915f41e3b6
+# ╠═b17e4e48-ddf7-4a53-a30a-8308d11ff229
+# ╠═361a991a-017a-4e9f-a469-c334dccef2e9
+# ╠═9f00a13c-01fa-49ad-ba59-0a3841b624db
+# ╠═32667776-1844-4257-942b-6649285db771
+# ╠═b3d4a2da-6aed-43fe-990a-af0c3ce74d04
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
