@@ -40,7 +40,7 @@ md"""
 ## UFSC/Blumenau
 ### MAT4642 - Introdução à Matemática Computacional
 ### Prof. Luiz-Rafael Santos
-### Semana 18 - Aula 01
+### Semana 17 - Aula 02
 """
 
 # ╔═╡ 758689fe-ba1f-4420-8f76-7bc380e2554c
@@ -172,7 +172,40 @@ O objetivo do nosso otimizador será encontrar os valores de $L, k$ e $t_0$ que 
 """
 
 # ╔═╡ 4eb2330e-e6f6-44f0-b9b2-2f3bf2565682
+begin
+	# 1. Escolher o Solver Não-Linear
+	modelo_nl = Model(Ipopt.Optimizer)
+	#set_silent(modelo_nl) # Para não poluir a tela com o log do Ipopt
 
+	# 2. Variáveis de Decisão (Os parâmetros da curva!)
+	# Dica: Em NLP (Non-Linear Programming), chutes iniciais (start) ajudam muito!
+	@variable(modelo_nl, L >= 0, start=400) 
+	@variable(modelo_nl, k >= 0, start=0.5)
+	@variable(modelo_nl, t0 >= 0,     start=5)
+
+	# 3. Expressão do Modelo Teórico
+	# 
+	# No JuMP, definimos uma função auxiliar ou escrevemos direto na objetiva.
+	
+	# 4. Função Objetivo: MINIMIZAR O ERRO QUADRÁTICO (Least Squares)
+	# Min Sum (Valor_Observado - Valor_Previsto)^2
+	@objective(modelo_nl, Min, 
+		sum((logistica(semanas[i], L, k, t0) - vendas_observadas[i] )^2 for i in 1:length(semanas))
+	)
+
+	# 5. Otimizar
+	optimize!(modelo_nl)
+
+	md"""
+	### ⚙️ Resultado do Ajuste
+	
+	O Solver ajustou a curva aos pontos e encontrou:
+	
+	* **Capacidade de Mercado ($L$):** $(round(value(L), digits=0)) Litros
+	* **Taxa de Crescimento ($k$):** $(round(value(k), digits=3))
+	* **Ponto de Inflexão ($t_0$):** Semana $(round(value(t0), digits=1))
+	"""
+end
 
 # ╔═╡ 243bd1ca-81b4-466b-94ca-7ccdef2dcd7d
 begin
@@ -185,7 +218,6 @@ begin
 	# Plotar
 	p = scatter(semanas, vendas_observadas, label="Dados Históricos", color=:blue)
 	plot!(p, t_futuro, vendas_previstas, label="Modelo Ajustado (Ipopt)", color=:red, linewidth=3)
-	]
 	
 	# Marcar o Teto
 	hline!([value(L)], label="Teto de Mercado Estimado", linestyle=:dash, color=:gray)
@@ -196,40 +228,228 @@ begin
 end
 
 # ╔═╡ 4222a8df-a87b-4f06-a9df-cf90930ead71
+md"""
+# 🏁 Encerramento: PCA (Principal Component Analysis)
+## Reduzindo a Complexidade do Mundo
 
+Durante o curso, aprendemos a lidar com muitas variáveis ($x_1, x_2, \dots, x_n$). Mas e quando temos variáveis *demais*?
+
+Imagine que analisamos uma cerveja baseada em 5 critérios: **Amargor (IBU), Teor Alcoólico (ABV), Cor (EBC), Preço e Nota**.
+Visualizar um gráfico em 5 dimensões é impossível para humanos.
+
+**O objetivo do PCA:** Encontrar um novo sistema de coordenadas (eixos) que resume a maior parte da informação (variância) em apenas 2 ou 3 dimensões.
+
+### A Conexão com SVD
+Lembra da SVD? $A = U \Sigma V^T$.
+O PCA é basicamente uma aplicação direta da SVD na matriz de covariância dos dados.
+"""
 
 # ╔═╡ 020a98a4-93e0-474a-b5f2-583edd927345
-
+begin
+	Random.seed!(42)
+	n_cervejas = 20
+	
+	# Criando variáveis latentes para gerar correlação
+	# "Intensidade": afeta IBU, ABV e EBC
+	intensidade = randn(n_cervejas) 
+	# "Custo-Benefício": afeta Preço e Nota
+	qualidade = randn(n_cervejas)
+	
+	# Gerando as 5 características (Dimensões)
+	# 1. IBU (Amargor)
+	ibu = 30 .+ 20 * intensidade .+ 5 * randn(n_cervejas)
+	# 2. ABV (Álcool)
+	abv = 5.0 .+ 1.5 * intensidade .+ 0.5 * randn(n_cervejas)
+	# 3. EBC (Cor)
+	ebc = 10 .+ 5 * intensidade .+ 2 * randn(n_cervejas)
+	# 4. Preço (R$)
+	preco = 15 .+ 5 * intensidade .+ 3 * qualidade .+ randn(n_cervejas)
+	# 5. Nota (0-5)
+	nota = 3.5 .+ 0.5 * qualidade .+ 0.2 * randn(n_cervejas)
+	
+	# Matriz de Dados X (n x 5)
+	# Cada linha é uma cerveja, cada coluna uma característica
+	X_bruto = hcat(ibu, abv, ebc, preco, nota)
+	
+	nomes_colunas = ["IBU", "ABV", "EBC", "Preço", "Nota"]
+	
+	md"""
+	**Dataset Gerado:** Temos uma matriz $20 \times 5$.
+	Como visualizar isso? Se plotarmos IBU vs ABV, ignoramos o Preço. Se plotarmos Preço vs Nota, ignoramos o Amargor.
+	"""
+end
 
 # ╔═╡ a9a7ed94-22c5-453c-a95b-3b4a23ae0ef9
-
+# Vamos olhar para os dados!
 
 # ╔═╡ 43629dc0-6beb-433e-8270-7773d81c7066
+md"""
+### 🛠️ O Algoritmo PCA em 3 Passos
 
+Para realizar o PCA "na mão" (sem pacotes prontos), seguimos a receita da Álgebra Linear:
+
+1.  **Centralizar os Dados:** Subtrair a média de cada coluna. O PCA analisa variância ao redor da origem.
+2.  **Calcular a SVD:** Decompor a matriz centralizada.
+3.  **Projetar:** Multiplicar os dados pelos autovetores principais (matriz $V$).
+"""
 
 # ╔═╡ e82180aa-34c0-4496-9855-e0cf53704c87
-
+begin
+	# Calcular média de cada coluna (dimensão 1)
+	medias = mean(X_bruto, dims=1)
+	
+	# Subtrair a média (Broadcasting do Julia facilita muito!)
+	X_cent = X_bruto .- medias
+	
+	md"Dados centralizados. Média de cada coluna agora é praticamente zero."
+end
 
 # ╔═╡ e78c1cf1-daa7-4f83-974d-8e4579c8a4a5
+# Vamos verificar a média das colunas
 
 
 # ╔═╡ f7d5bb56-66b0-4250-8284-36915f41e3b6
-
+begin
+	# A mágica da aula passada
+	# Importante: Como X é (n x p), a matriz de covariância seria X'X.
+	# Os autovetores da covariância são as colunas de V na SVD de X.
+	
+	F = svd(X_cent)
+	
+	# Valores Singulares (indicam a importância de cada dimensão)
+	sigma = F.S
+	
+	# Vetores Singulares (as "receitas" das novas componentes)
+	V = F.Vt' # Transposta para ficar nas colunas
+	
+	md"SVD calculada!"
+end
 
 # ╔═╡ b17e4e48-ddf7-4a53-a30a-8308d11ff229
-
+begin
+	# A variância explicada é proporcional ao quadrado dos valores singulares
+	variancia = sigma.^2
+	variancia_relativa = variancia / sum(variancia)
+	
+	# Plot acumulado
+	bar(1:5, variancia_relativa, label="Variância por Componente", alpha=0.6)
+	plot!(cumsum(variancia_relativa), label="Acumulada", linewidth=3, marker=:o)
+	title!("Scree Plot: Quantas dimensões importam?")
+	ylabel!("% de Informação Explicada")
+	xlabel!("Componente Principal (PC)")
+end
 
 # ╔═╡ 361a991a-017a-4e9f-a469-c334dccef2e9
-
+md"""
+**Análise do Gráfico:**
+Provavelmente as **duas primeiras colunas** (PC1 e PC2) explicam mais de 80% ou 90% da variação dos dados.
+Isso significa que podemos jogar fora as outras 3 dimensões e ainda assim entender o "mapa" das cervejas.
+"""
 
 # ╔═╡ 9f00a13c-01fa-49ad-ba59-0a3841b624db
-
+begin
+	# Vamos pegar apenas as 2 primeiras componentes principais (PC1 e PC2)
+	# Projetar os dados originais (centralizados) nos novos eixos
+	# X_proj = X_cent * V
+	
+	X_2D = X_cent * V[:, 1:2]
+	
+	# Plotando o Mapa das Cervejas
+	scatter(X_2D[:,1], X_2D[:,2], 
+		title="Mapa PCA das Cervejas (5D -> 2D)",
+		xlabel="PC1 (Dimensão Principal)",
+		ylabel="PC2 (Dimensão Secundária)",
+		legend=false,
+		markersize=6,
+		color=:orange
+	)
+	
+	# Adicionando rótulos (números) para identificar as cervejas
+	for i in 1:n_cervejas
+		annotate!(X_2D[i,1], X_2D[i,2]+0.5, text("$i", 8))
+	end
+	
+	plot!() # Retorna o plot
+end
 
 # ╔═╡ 32667776-1844-4257-942b-6649285db771
-
+begin
+	# Vamos olhar os pesos (loadings) das duas principais componentes
+	# V é a matriz de rotação.
+	# Coluna 1 = Receita do PC1
+	# Coluna 2 = Receita do PC2
+	
+	p1 = bar(1:5, V[:, 1], 
+		xticks=(1:5, nomes_colunas), 
+		title="Pesos do PC1 (Intensidade?)", 
+		label=false, 
+		color=:blue,
+		rotation=45 # Gira o texto para não encavalar
+	)
+	
+	p2 = bar(1:5, V[:, 2], 
+		xticks=(1:5, nomes_colunas), 
+		title="Pesos do PC2 (Qualidade?)", 
+		label=false, 
+		color=:red,
+		rotation=45
+	)
+	
+	# Coloca os dois gráficos lado a lado
+	plot(p1, p2, layout=(1,2), size=(800, 400), ylims=(-1, 1))
+end
 
 # ╔═╡ b3d4a2da-6aed-43fe-990a-af0c3ce74d04
+md"""
+### 🧠 O "Backstage" Matemático: Por que SVD resolve PCA? 
 
+Até agora, usamos o computador para otimizar coisas iterativamente (como o `Ipopt` fez com a curva logística). Mas o PCA é um caso especial: ele é um problema de otimização que tem **solução analítica fechada** vinda da Álgebra Linear.
+
+#### 1. O Problema de Otimização
+O objetivo do PCA é encontrar um vetor de direção ``w`` (com tamanho 1) tal que, ao projetarmos nossos dados ``X`` nessa direção, a **variância seja máxima**.
+
+Matematicamente, queremos resolver este problema de maximização:
+
+```math
+\max_{w} \quad \text{Variância}(Xw) = \frac{1}{n} w^T X^T X w
+```
+
+```math
+\text{sujeito a:} \quad ||w|| = 1
+```
+
+#### 2. Usando Multiplicadores de Lagrange
+Se resolvermos esse problema usando Lagrange (Cálculo 2), chegamos à conclusão que o vetor ``w`` ideal deve satisfazer:
+
+```math
+(X^T X) w = \lambda w
+```
+
+Isso te lembra algo? Essa é exatamente a definição de **Autovetor** e **Autovalor**!
+Ou seja: As direções principais (PCA) são os autovetores da matriz de covariância ``X^T X``.
+
+#### 3. A Conexão com SVD
+Calcular ``X^T X`` pode ser caro e impreciso computacionalmente. É aqui que entra a **SVD** que vimos semana passada.
+
+Sabemos que qualquer matriz ``X`` pode ser decomposta em ``X = U \Sigma V^T``. Vamos substituir isso na equação da covariância:
+
+```math
+X^T X = (V \Sigma U^T)(U \Sigma V^T)
+```
+
+Como ``U`` é ortogonal, ``U^T U = I``. Logo:
+
+```math
+X^T X = V \Sigma^2 V^T
+```
+
+**Conclusão Brilhante:**
+As colunas de ``V`` (da SVD de ``X``) são **exatamente** os autovetores de ``X^T X``.
+* Portanto, não precisamos montar o problema de otimização no `JuMP`.
+* Basta calcular a SVD da matriz de dados ``X``.
+* A matriz ``V`` contém os eixos ideais (Componentes Principais).
+* Os valores singulares ``\Sigma`` indicam a importância (variância) de cada eixo.
+"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1590,7 +1810,7 @@ version = "1.9.2+0"
 # ╠═e78c1cf1-daa7-4f83-974d-8e4579c8a4a5
 # ╠═f7d5bb56-66b0-4250-8284-36915f41e3b6
 # ╠═b17e4e48-ddf7-4a53-a30a-8308d11ff229
-# ╠═361a991a-017a-4e9f-a469-c334dccef2e9
+# ╟─361a991a-017a-4e9f-a469-c334dccef2e9
 # ╠═9f00a13c-01fa-49ad-ba59-0a3841b624db
 # ╠═32667776-1844-4257-942b-6649285db771
 # ╠═b3d4a2da-6aed-43fe-990a-af0c3ce74d04
