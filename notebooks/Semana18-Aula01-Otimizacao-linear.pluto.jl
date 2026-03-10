@@ -185,7 +185,7 @@ begin
 	# Plotar
 	p = scatter(semanas, vendas_observadas, label="Dados Históricos", color=:blue)
 	plot!(p, t_futuro, vendas_previstas, label="Modelo Ajustado (Ipopt)", color=:red, linewidth=3)
-	]
+	
 	
 	# Marcar o Teto
 	hline!([value(L)], label="Teto de Mercado Estimado", linestyle=:dash, color=:gray)
