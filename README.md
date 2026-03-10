@@ -63,9 +63,9 @@ Veja [aqui](ementa.md) para o conteúdo programático da disciplina.
 
 [4] MENEZES, Nilo Ney Coutinho. _Introdução à programação com Python : Algoritmos e lógica de programação para iniciantes_. São Paulo, SP: Novatec Editora, 2010. 552 p.
 
-[5] NAGAR, Sandeep. _Beginning Julia Programming_. New York: Apress, 2017. DOI:10.1007/978-1-4842-3171-5.
+[5] NAGAR, Sandeep. _Beginning Julia Programming_. New York: Apress, 2017. DOI: 10.1007/978-1-4842-3171-5.
 
-[6] SIQUEIRA, Abel Soares. _Canal Do YouTube de Abel Siqueira_: Otimização, Julia e Outros Tópicos. YouTube. 2025. Disponível em:https://www.youtube.com/channel/UCrHWmb1a2JW50QovKgkcKCQ. Acesso em: 27 nov. 2025.
+[6] SIQUEIRA, Abel Soares. _Canal Do YouTube de Abel Siqueira_: Otimização, Julia e Outros Tópicos. YouTube. 2025. Disponível em: https://www.youtube.com/channel/UCrHWmb1a2JW50QovKgkcKCQ. Acesso em: 27 nov. 2025.
 
 <!-- Introdução a linguagem de programação Julia [recurso
 eletrônico]./Raimundo Nonato Diniz Costa Filho... [et al.].— São
