@@ -20,13 +20,13 @@ Por favor,  siga [as instruções ](https://www.youtube.com/playlist?list=PLIFgJ
 
 - Professor Luiz-Rafael Santos ([l.r.santos@ufsc.br](mailto:l.r.santos@ufsc.br))
 
-- Ter 20:20-22:00, Qui 18:30-20:10$^*$ 
+- Ter 20:20-22:00, Qui 18:30-20:10
 - Atendimento: Terças e Quintas-feiras 17:00-18:00, ou por agendamento prévio via email.
 - Sala B202
 
 - [Disciplina no Moodle](https://presencial.moodle.ufsc.br/course/view.php?id=39576)
 
-- [Página do Github da disciplina] (https://github.com/lrsantos11/IntroMatComp)
+- [Página do Github da disciplina](https://github.com/lrsantos11/IntroMatComp)
 
 ## Materiais do curso
 
