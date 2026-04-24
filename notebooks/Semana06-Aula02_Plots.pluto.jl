@@ -164,20 +164,6 @@ begin
 	boxplot(dados_boxplot, title = "Boxplot", color = [:darkorange :lightpink])
 end
 
-# ╔═╡ 36573a8e-f59c-44d0-88f0-476c893705d8
-md"""
-### Gráfico de Pizza
-Tudo bem se você preferir os gráficos de pizza, eles ainda têm seu charme! 🎉 O bloco a seguir cria um gráfico de pizza utilizando a paleta de cores :tab10, que já vem disponível por padrão no pacote Plots.jl.
-"""
-
-# ╔═╡ 70d5c3e2-7c60-433e-b743-a52ce76fbc9c
-begin
-	cursos = ["MAT", "ECA", "EMT", "QUI", "ETX"]
-	estudantes = [100, 24, 33, 72, 5]
-	@info sum(estudantes)
-	pie(cursos, estudantes, title = "Quantidade de estudantes ... por curso")
-end
-
 # ╔═╡ 62ea98a3-3e4e-467c-bd5a-ec35d13c4f35
 md"""
 #### Lendo arquivos CSV e plotando
@@ -249,6 +235,20 @@ md"""
 begin
  savefig(plt_salvar, "../assets/grafico1.png")
 	savefig(plt_salvar, "../assets/grafico1.pdf")
+end
+
+# ╔═╡ 36573a8e-f59c-44d0-88f0-476c893705d8
+md"""
+### Gráfico de Pizza
+Tudo bem se você preferir os gráficos de pizza, eles ainda têm seu charme! 🎉 O bloco a seguir cria um gráfico de pizza utilizando a paleta de cores :tab10, que já vem disponível por padrão no pacote Plots.jl.
+"""
+
+# ╔═╡ 70d5c3e2-7c60-433e-b743-a52ce76fbc9c
+begin
+	cursos = ["MAT", "ECA", "EMT", "QUI", "ETX"]
+	estudantes = [100, 24, 33, 72, 5]
+	@info sum(estudantes)
+	pie(cursos, estudantes, title = "Quantidade de estudantes ... por curso")
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
