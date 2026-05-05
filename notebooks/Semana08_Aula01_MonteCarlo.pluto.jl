@@ -1,14 +1,14 @@
 ### A Pluto.jl notebook ###
-# v0.20.24
+# v0.20.19
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ 854b20ee-4a64-49fc-95ae-bbdc4b3337e9
 begin
-	using Plots
-	using Random
-	using StatsBase,Distributions,  StatsPlots #Chamar funções estatísticas
+    using Plots
+    using Random
+    using StatsBase, Distributions, StatsPlots #Chamar funções estatísticas
 end
 
 # ╔═╡ 01777032-ab5b-11f0-1945-d71872063676
@@ -29,9 +29,9 @@ md"""
 """
 
 # ╔═╡ b6e88b48-e409-45fd-926f-e93276abd601
-function jogar_dados(num_tentativas; lados = 6)
-	return rand(1:lados, num_tentativas)
-end 
+function jogar_dados(num_tentativas; lados=6)
+    return rand(1:lados, num_tentativas)
+end
 
 # ╔═╡ 199f9de6-d0f8-4930-99a0-fe836571029a
 jogar_dados(10)
@@ -50,16 +50,16 @@ md"""
 
 # ╔═╡ b55d7055-b86d-495c-bb38-4a6d2e2f7868
 let
-	n = 10 
-	A = Float64[i + j for i in 1:n, j in 1:n]
-	B = zeros(n,n)
-	for i in 1:n
-		for j in 1:n
-			B[i,j] = i+j
-		end
-	end
-	@info A
-	@info B
+    n = 10
+    A = Float64[i + j for i in 1:n, j in 1:n]
+    B = zeros(n, n)
+    for i in 1:n
+        for j in 1:n
+            B[i, j] = i + j
+        end
+    end
+    @info A
+    @info B
 end
 
 # ╔═╡ ea6091f0-a545-43c3-b159-eb0f6dda628b
@@ -73,24 +73,24 @@ sum(jogadas_dados)
 
 # ╔═╡ 7de896f0-9e06-4611-92a9-3dc34c2a6df9
 function simula_soma_dados(num_dados, num_tentativas)
-	jogadas_dados = [jogar_dados(num_tentativas) for nd in 1:num_dados]
-	# for nd in 1:num_dados
-	# 	push!(jogadas_dados, jogar_dados(num_tentativas))
-	# end
-	soma_dados = sum(jogadas_dados) # sum soma os dados dos elementos do vetor
-	media_soma = mean(soma_dados)
-	println("Média da soma dos dados: $(media_soma)")
-	desvio_padrao = std(soma_dados)
-	println("Desvio Padrão: $desvio_padrao")
-	histogram(soma_dados, title = "Lançamento de $(num_dados) dados",
-			 	ylabel = "Frequencia", xlabel = "soma dos dados")
+    jogadas_dados = [jogar_dados(num_tentativas) for nd in 1:num_dados]
+    # for nd in 1:num_dados
+    # 	push!(jogadas_dados, jogar_dados(num_tentativas))
+    # end
+    soma_dados = sum(jogadas_dados) # sum soma os dados dos elementos do vetor
+    media_soma = mean(soma_dados)
+    println("Média da soma dos dados: $(media_soma)")
+    desvio_padrao = std(soma_dados)
+    println("Desvio Padrão: $desvio_padrao")
+    histogram(soma_dados, title="Lançamento de $(num_dados) dados",
+        ylabel="Frequencia", xlabel="soma dos dados")
 end
 
 # ╔═╡ 7231d5c7-c008-4837-8c54-24cc2d75ba37
-simula_soma_dados(2,1000)
+simula_soma_dados(2, 1000)
 
 # ╔═╡ 7b4ccf6c-5eb7-4e9d-bc77-35766c7fe080
-simula_soma_dados(10,100000)
+simula_soma_dados(10, 100000)
 
 # ╔═╡ dee98a52-87c7-4470-ae6e-f89a338efa46
 md"""
@@ -102,31 +102,31 @@ Como primeiro exemplo, vamos considerar uma pergunta simples: em média, quantas
 
 # ╔═╡ 54cb725a-1da7-4c78-8403-ce8db17ebabe
 let
-	# Definir o número de tentativas
-	num_tentativas = 100_000
+    # Definir o número de tentativas
+    num_tentativas = 100_000
 
-	# Armazenar o número de experimentos necessários para conseguir 6
-	rodadas_até_seis = Int[]
+    # Armazenar o número de experimentos necessários para conseguir 6
+    rodadas_até_seis = Int[]
 
-	#Laço principal: executar o experimento 'num_tentativas' vezes
-	for i in 1:num_tentativas
-		num_rodadas = 0
-		#Equanto não sair um 6, continua
-		while true
-			rodada = rand(1:6)
-			num_rodadas += 1
-			if rodada == 6
-				break
-			end
-		end
-		push!(rodadas_até_seis, num_rodadas)
-	end
-	@info "Máximo: $(maximum(rodadas_até_seis))"
-	# Calcula o número médio de lançamentos ao longo de todos os testes.
-	media_rodadas = mean(rodadas_até_seis)
-	@info "Média das rodadas: $media_rodadas"
-	histogram(rodadas_até_seis, leg = false)
-	
+    #Laço principal: executar o experimento 'num_tentativas' vezes
+    for i in 1:num_tentativas
+        num_rodadas = 0
+        #Equanto não sair um 6, continua
+        while true
+            rodada = rand(1:6)
+            num_rodadas += 1
+            if rodada == 6
+                break
+            end
+        end
+        push!(rodadas_até_seis, num_rodadas)
+    end
+    @info "Máximo: $(maximum(rodadas_até_seis))"
+    # Calcula o número médio de lançamentos ao longo de todos os testes.
+    media_rodadas = mean(rodadas_até_seis)
+    @info "Média das rodadas: $media_rodadas"
+    histogram(rodadas_até_seis, leg=false)
+
 end
 
 # ╔═╡ 0763ea49-58b3-49af-a5b3-89364d6ccc30
