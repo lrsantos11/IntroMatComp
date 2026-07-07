@@ -1,397 +1,393 @@
 ### A Pluto.jl notebook ###
-# v0.20.27
+# v0.20.21
 
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 4e1c74c7-a2e1-4242-af24-7402717e79a6
-begin
-    using Random
-    using LinearAlgebra
-    using StatsBase
-    using Plots
-    using DataFrames
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    #! format: off
+    return quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+    #! format: on
 end
 
-# ╔═╡ d35d19d4-3655-465c-98b4-6b5fa46d3039
+# ╔═╡ 5478453b-f0bb-4e01-ad74-644375cd733a
 md"""
 ## UFSC/Blumenau
 ### MAT4642 - Introdução à Matemática Computacional
 ### Prof. Luiz-Rafael Santos
-### Semana 18 - Aula 02 (09/07/2026)
+### Semana 18 - Aula 01 (07/07/2026)
 """
 
-# ╔═╡ 3125b653-f760-4abd-ae30-b891155ee905
-md"""
-### 🔁 Retomando de terça-feira
-
-Na última aula, usamos o Ipopt para ajustar uma curva logística: um problema
-de otimização não-linear **sem fórmula fechada**, resolvido iterativamente.
-
-Hoje vemos o contraste: o **PCA** também nasce de um problema de otimização
-(maximizar variância), mas — graças à estrutura especial do problema — tem
-**solução fechada**, obtida diretamente pela SVD, sem precisar de nenhum
-solver iterativo. Esta é também a última aula de conteúdo novo do semestre.
-"""
-
-# ╔═╡ 929c6c29-b7cf-4897-8a65-54edb2f1dfc4
-md"""
-# 🏁 Encerramento: PCA (Principal Component Analysis)
-## Reduzindo a Complexidade do Mundo
-
-Durante o curso, aprendemos a lidar com muitas variáveis ($x_1, x_2, \dots, x_n$). Mas e quando temos variáveis *demais*?
-
-Imagine que analisamos uma cerveja baseada em 5 critérios: **Amargor (IBU), Teor Alcoólico (ABV), Cor (EBC), Preço e Nota**.
-Visualizar um gráfico em 5 dimensões é impossível para humanos.
-
-**O objetivo do PCA:** Encontrar um novo sistema de coordenadas (eixos) que resume a maior parte da informação (variância) em apenas 2 ou 3 dimensões.
-
-### A Conexão com SVD
-Lembra da SVD? $A = U \Sigma V^T$.
-O PCA é basicamente uma aplicação direta da SVD na matriz de covariância dos dados.
-"""
-
-# ╔═╡ d721a23b-dc18-4f4f-84eb-6b189315e70a
+# ╔═╡ 1aa648a8-f58e-49c4-ad2c-93c78922eb06
 begin
-    Random.seed!(42)
-    n_cervejas = 20
-
-    # Criando variáveis latentes para gerar correlação
-    # "Intensidade": afeta IBU, ABV e EBC
-    intensidade = randn(n_cervejas)
-    # "Custo-Benefício": afeta Preço e Nota
-    qualidade = randn(n_cervejas)
-
-    # Gerando as 5 características (Dimensões)
-    # 1. IBU (Amargor)
-    ibu = 30 .+ 20 * intensidade .+ 5 * randn(n_cervejas)
-    # 2. ABV (Álcool)
-    abv = 5.0 .+ 1.5 * intensidade .+ 0.5 * randn(n_cervejas)
-    # 3. EBC (Cor)
-    ebc = 10 .+ 5 * intensidade .+ 2 * randn(n_cervejas)
-    # 4. Preço (R$)
-    preco = 15 .+ 5 * intensidade .+ 3 * qualidade .+ randn(n_cervejas)
-    # 5. Nota (0-5)
-    nota = 3.5 .+ 0.5 * qualidade .+ 0.2 * randn(n_cervejas)
-
-    # Matriz de Dados X (n x 5)
-    # Cada linha é uma cerveja, cada coluna uma característica
-    X_bruto = hcat(ibu, abv, ebc, preco, nota)
-
-    nomes_colunas = ["IBU", "ABV", "EBC", "Preço", "Nota"]
+    using Plots
+    using Random # Para gerar dados com ruído
+    using PlutoUI
 end
 
-# ╔═╡ ac479f8a-6ec6-4cc8-a7a6-112bb47a0fd2
+# ╔═╡ fa34540a-15bc-4b76-b523-664f2286e779
 md"""
-**Dataset Gerado:** Temos uma matriz $20 \times 5$.
-Como visualizar isso? Se plotarmos IBU vs ABV, ignoramos o Preço. Se plotarmos Preço vs Nota, ignoramos o Amargor.
+# 📉 Previsão de Demanda: Otimização Não-Linear
+
+Nas últimas semanas usamos Programação Linear para decidir **quanto produzir**,
+com o `HiGHS` resolvendo problemas onde a função objetivo e as restrições são retas
+(ou hiperplanos). Hoje mudamos de pergunta: em vez de decidir uma quantidade,
+queremos descobrir **como o mercado se comporta** — e a resposta não é uma reta.
+
+### O Cenário
+O Pedro lançou a cerveja **Bock** há 10 semanas. As vendas começaram devagar,
+aceleraram muito e agora parecem querer estabilizar. Ele precisa prever qual será
+a demanda máxima ($L$) para não comprar tanques desnecessários.
+
+Como o comportamento não é linear, não podemos usar `HiGHS`. Precisamos de um
+solver capaz de lidar com curvas: o **Ipopt** (Interior Point OPTimizer).
 """
 
-# ╔═╡ 67397c66-00cf-4007-9160-82d41c92811d
-# Vamos olhar para os dados!
-df = DataFrame(X_bruto, nomes_colunas)
-
-# ╔═╡ 45d13700-eba7-4a54-b607-ed5b851cecff
+# ╔═╡ 4b3b27de-448b-4db7-8693-860618667b36
 md"""
-### 🛠️ O Algoritmo PCA em 3 Passos
+### 📜 O Modelo Logístico (A Curva em S)
 
-Para realizar o PCA "na mão" (sem pacotes prontos), seguimos a receita da Álgebra Linear:
+Antes de tentar prever as vendas, precisamos entender o comportamento do mercado.
+No início do século XIX, **Thomas Malthus** propôs que populações (ou vendas)
+crescem exponencialmente ($N(t) = N_0 e^{rt}$). Isso funciona no início, mas
+ignora um fato básico: **o mercado é finito**.
 
-1.  **Centralizar os Dados:** Subtrair a média de cada coluna. O PCA analisa variância ao redor da origem.
-2.  **Calcular a SVD:** Decompor a matriz centralizada.
-3.  **Projetar:** Multiplicar os dados pelos autovetores principais (matriz $V$).
+Em 1838, o matemático belga **Pierre François Verhulst** corrigiu isso
+introduzindo a **Equação Logística**. Ele percebeu que, à medida que a
+população cresce, a resistência aumenta (concorrência, saturação de mercado)
+e o crescimento desacelera.
+
+#### A Fórmula Matemática
+A função que descreve esse comportamento (e que vamos ajustar aos nossos dados) é:
+
+$$N(t) = \frac{L}{1 + e^{-k(t - t_0)}}$$
+
+Onde os parâmetros que o `JuMP` terá que descobrir são:
+
+1.  **$L$ (Capacidade de Suporte):** É o "teto" da curva. No nosso caso,
+    representa o **total máximo de clientes** que consomem Bock em Blumenau.
+    A curva nunca ultrapassa esse valor.
+2.  **$k$ (Taxa de Crescimento):** A inclinação da subida. Quanto maior o $k$,
+    mais rápida é a explosão de vendas ("viralização").
+3.  **$t_0$ (Ponto de Inflexão):** O momento no tempo onde o crescimento
+    atinge seu pico e começa a desacelerar (o meio da curva S).
 """
 
-# ╔═╡ ac9bc4be-37a4-4513-ae63-03d6306965fc
+# ╔═╡ e4155f61-401b-4c57-a253-3cdf168f1c39
 begin
-    # Calcular média de cada coluna (dimensão 1)
-    medias = mean(X_bruto, dims=1)
-
-    # Subtrair a média (Broadcasting do Julia facilita muito!)
-    X_cent = X_bruto .- medias
+    # Função auxiliar apenas para plotar a teoria
+    f_teorica(t, L, k, t0) = L / (1 + exp(-k * (t - t0)))
 end
 
-# ╔═╡ 10376717-668e-4405-b614-774a797a706e
-md"Dados centralizados. Média de cada coluna agora é praticamente zero."
-
-# ╔═╡ 50bf2745-5bdb-44eb-a206-a93bd12e808f
-X_cent
-
-# ╔═╡ d11bd815-3a8f-404e-b505-d1f99867ff4d
-[mean(col) for col in eachcol(X_cent)]
-
-# ╔═╡ 0db852a0-d1b2-4501-bb91-10fb7a350a7e
-begin
-    # Importante: Como X é (n x p), a matriz de covariância seria X'X.
-    # Os autovetores da covariância são as colunas de V na SVD de X.
-
-    F = svd(X_cent)
-
-    # Valores Singulares (indicam a importância de cada dimensão)
-    sigma = F.S
-
-    # Vetores Singulares (as "receitas" das novas componentes)
-    V = F.Vt' # Transposta para ficar nas colunas
-end
-
-# ╔═╡ 8db4e104-7cf5-4819-89c8-409caed57136
-sigma
-
-# ╔═╡ 1818e6e2-1b82-4aae-9f82-baffa5b2eb67
-begin
-    # A variância explicada é proporcional ao quadrado dos valores singulares
-    variancia = sigma .^ 2
-    variancia_relativa = variancia / sum(variancia)
-
-    # Plot acumulado
-    bar(1:5, variancia_relativa, label="Variância por Componente", alpha=0.6)
-    plot!(cumsum(variancia_relativa), label="Acumulada", linewidth=3, marker=:o)
-    title!("Scree Plot: Quantas dimensões importam?")
-    ylabel!("% de Informação Explicada")
-    xlabel!("Componente Principal (PC)")
-end
-
-# ╔═╡ 9629e55b-5dd5-4c1b-ba8c-baaf23706bc9
+# ╔═╡ d60001d2-871f-4876-ba35-9f4673594823
 md"""
-**Análise do Gráfico:**
-Provavelmente as **duas primeiras colunas** (PC1 e PC2) explicam mais de 80% ou 90% da variação dos dados.
-Isso significa que podemos jogar fora as outras 3 dimensões e ainda assim entender o "mapa" das cervejas.
+**Simulador da Curva Logística (Entenda os Parâmetros):**
+
+* Capacidade $L$: $(@bind L_demo Slider(1000:100:6000, default=5000, show_value=true))
+* Velocidade $k$: $(@bind k_demo Slider(0.1:0.1:2.0, default=0.8, show_value=true))
+* Centro $t_0$: $(@bind t0_demo Slider(0:1:15, default=6, show_value=true))
 """
 
-# ╔═╡ 05eb8197-f29d-4af4-bfb5-795a81956bcf
+# ╔═╡ a43b17cf-8f71-4230-96e2-b3ee2da93545
 begin
-    # Vamos pegar apenas as 2 primeiras componentes principais (PC1 e PC2)
-    # Projetar os dados originais (centralizados) nos novos eixos
-    # X_proj = X_cent * V
+    # Plota a curva baseada nos sliders acima
+    t_range = 0:0.1:15
+    plot(t_range, t -> f_teorica(t, L_demo, k_demo, t0_demo),
+        label="Curva Teórica", linewidth=3, color=:purple,
+        xlabel="Tempo", ylabel="Vendas",
+        title="Comportamento da Função Logística",
+        ylims=(0, 6500)
+    )
+    # Marca o teto L
+    hline!([L_demo], linestyle=:dash, color=:gray, label="Teto L")
+    # Marca o centro t0
+    vline!([t0_demo], linestyle=:dot, color=:gray, label="Centro t0")
+end
 
-    X_2D = X_cent * V[:, 1:2]
+# ╔═╡ 353beeaf-af5e-4eab-b6d9-ab8d02399b43
+begin
+    # Semente para garantir que todos alunos tenham os mesmos "dados aleatórios"
+    Random.seed!(1985922)
 
-    # Plotando o Mapa das Cervejas
-    scatter(X_2D[:, 1], X_2D[:, 2],
-        title="Mapa PCA das Cervejas (5D -> 2D)",
-        xlabel="PC1 (Dimensão Principal)",
-        ylabel="PC2 (Dimensão Secundária)",
-        legend=false,
-        markersize=6,
-        color=:orange
+    # Função "Verdadeira" (que o Pedro não conhece, mas nós sim)
+    L_real = 5000.0  # Teto de 5000 Litros
+    k_real = 0.8     # Crescimento rápido
+    t0_real = 6.0    # Pico na semana 6
+
+    logistica(t, L, k, t0) = L / (1 + exp(-k * (t - t0)))
+
+    # Gerando dados para 10 semanas com Ruído (erro de medição)
+    semanas = 1:10
+    vendas_observadas = [logistica(t, L_real, k_real, t0_real) + 200*randn() for t in semanas]
+
+    # Garantindo que não haja vendas negativas por causa do ruído
+    vendas_observadas = max.(0, vendas_observadas)
+
+    scatter(semanas, vendas_observadas,
+        label="Vendas Observadas",
+        xlabel="Semana", ylabel="Litros Vendidos",
+        title="Histórico de Vendas da Bock",
+        legend=:bottomright, color=:blue)
+end
+
+# ╔═╡ f620fa64-fe4e-46c7-a406-bb4a0deeda77
+md"""
+### 🎯 O Objetivo: Mínimos Quadrados Não-Lineares
+
+Como o computador descobre a "melhor" curva? Ele usa o mesmo princípio da
+Regressão Linear que vocês já viram, mas adaptado.
+
+Imagine que, para um conjunto de parâmetros chutados $(L, k, t_0)$, a curva
+passe longe dos pontos reais. Dizemos que existe um **Resíduo** (erro) para
+cada semana:
+
+```math
+e_i = \text{Venda}_{\text{Real}} - \text{Venda}_{\text{Modelo}}(t_i)
+```
+
+O objetivo do nosso otimizador será encontrar os valores de $L, k$ e $t_0$
+que tornem a **Soma dos Quadrados dos Resíduos (SSE)** a menor possível.
+
+#### A Função Objetivo
+É isso que vamos escrever dentro do `JuMP` na próxima célula:
+
+```math
+\min \sum_{i=1}^{10} \left( \underbrace{y_i}_{\text{Dado Real}} - \underbrace{\frac{L}{1 + e^{-k(t_i - t_0)}}}_{\text{Nosso Modelo}} \right)^2
+```
+
+**Diferença Importante:** Na regressão linear ($y = ax+b$), existe uma fórmula
+direta para achar o mínimo. Aqui, como a função é complexa (exponencial no
+denominador), não existe fórmula mágica. Precisamos de um algoritmo (o Solver
+**Ipopt**) que "desce o morro" do erro iterativamente até achar o fundo do vale.
+"""
+
+# ╔═╡ 81577644-2add-4174-bf82-b6c0451395d1
+begin
+    using JuMP
+    using Ipopt
+end
+
+# ╔═╡ a3d312b2-905c-4cf8-96a2-937752ce6598
+begin
+    # 1. Escolher o Solver Não-Linear
+    modelo_nl = Model(Ipopt.Optimizer)
+    #set_silent(modelo_nl) # Para não poluir a tela com o log do Ipopt
+
+    # 2. Variáveis de Decisão (Os parâmetros da curva!)
+    # Dica: Em NLP (Non-Linear Programming), chutes iniciais (start) ajudam muito!
+    @variable(modelo_nl, L >= 0, start=400)
+    @variable(modelo_nl, k >= 0, start=0.5)
+    @variable(modelo_nl, t0 >= 0, start=5)
+
+    # 3. Função Objetivo: MINIMIZAR O ERRO QUADRÁTICO (Least Squares)
+    # Min Sum (Valor_Observado - Valor_Previsto)^2
+    @objective(modelo_nl, Min,
+        sum((logistica(semanas[i], L, k, t0) - vendas_observadas[i])^2 for i in 1:length(semanas))
     )
 
-    # Adicionando rótulos (números) para identificar as cervejas
-    for i in 1:n_cervejas
-        annotate!(X_2D[i, 1], X_2D[i, 2]+0.5, text("$i", 8))
-    end
+    # 4. Otimizar
+    optimize!(modelo_nl)
 
-    plot!() # Retorna o plot
+    md"""
+     ### ⚙️ Resultado do Ajuste
+
+     O Solver ajustou a curva aos pontos e encontrou:
+
+     * **Capacidade de Mercado ($L$):** $(round(value(L), digits=0)) Litros
+     * **Taxa de Crescimento ($k$):** $(round(value(k), digits=3))
+     * **Ponto de Inflexão ($t_0$):** Semana $(round(value(t0), digits=1))
+     """
 end
 
-# ╔═╡ f4a71e01-75d1-4bd0-a0b0-0d8320ee5388
-X_2D
-
-# ╔═╡ 0d5e56a0-1503-4333-a489-7c6a63e50b72
+# ╔═╡ 16eb455b-e56c-4845-8cd0-1b2857310e63
 begin
-    # Vamos olhar os pesos (loadings) das duas principais componentes
-    # V é a matriz de rotação.
-    # Coluna 1 = Receita do PC1
-    # Coluna 2 = Receita do PC2
+    # Criar um range maior para prever o futuro (até semana 15)
+    t_futuro = 0:0.1:15
 
-    p1 = bar(1:5, V[:, 1],
-        xticks=(1:5, nomes_colunas),
-        title="Pesos do PC1 (Intensidade?)",
-        label=false,
-        color=:blue,
-        rotation=45 # Gira o texto para não encavalar
-    )
+    # Calcular a curva usando os parâmetros otimizados pelo JuMP
+    vendas_previstas = logistica.(t_futuro, value(L), value(k), value(t0))
 
-    p2 = bar(1:5, V[:, 2],
-        xticks=(1:5, nomes_colunas),
-        title="Pesos do PC2 (Qualidade?)",
-        label=false,
-        color=:red,
-        rotation=45
-    )
+    # Plotar
+    p = scatter(semanas, vendas_observadas, label="Dados Históricos", color=:blue)
+    plot!(p, t_futuro, vendas_previstas, label="Modelo Ajustado (Ipopt)", color=:red, linewidth=3)
 
-    # Coloca os dois gráficos lado a lado
-    plot(p1, p2, layout=(1, 2), size=(800, 400), ylims=(-1, 1))
+    # Marcar o Teto
+    hline!([value(L)], label="Teto de Mercado Estimado", linestyle=:dash, color=:gray)
+
+    title!("Previsão de Vendas - Modelo Logístico")
+    xlabel!("Semanas")
+    ylabel!("Vendas (Litros)")
 end
 
-# ╔═╡ db262897-9848-4801-a6d2-4e295eb19c36
+# ╔═╡ 1f38f75d-54d4-4636-947c-bd09a15c33da
 md"""
-### 🧠 O "Backstage" Matemático: Por que SVD resolve PCA?
+### 🔑 O que levamos desta aula
 
-Até agora, usamos o computador para otimizar coisas iterativamente (como o `Ipopt` fez com a curva logística). Mas o PCA é um caso especial: ele é um problema de otimização que tem **solução analítica fechada** vinda da Álgebra Linear.
+Diferente da Programação Linear, aqui **não existe fórmula fechada**: o Ipopt
+resolveu o problema *iterativamente*, "descendo o morro" do erro até um mínimo.
+Isso é o caso geral da otimização não-linear — funciona para praticamente
+qualquer modelo, mas exige um algoritmo iterativo e depende de um bom chute
+inicial.
 
-#### 1. O Problema de Otimização
-O objetivo do PCA é encontrar um vetor de direção ``w`` (com tamanho 1) tal que, ao projetarmos nossos dados ``X`` nessa direção, a **variância seja máxima**.
-
-Matematicamente, queremos resolver este problema de maximização:
-
-```math
-\max_{w} \quad \text{Variância}(Xw) = \frac{1}{n} w^T X^T X w
-```
-
-```math
-\text{sujeito a:} \quad ||w|| = 1
-```
-
-#### 2. Usando Multiplicadores de Lagrange
-Se resolvermos esse problema usando Lagrange (Cálculo 2), chegamos à conclusão que o vetor ``w`` ideal deve satisfazer:
-
-```math
-(X^T X) w = \lambda w
-```
-
-Isso te lembra algo? Essa é exatamente a definição de **Autovetor** e **Autovalor**!
-Ou seja: As direções principais (PCA) são os autovetores da matriz de covariância ``X^T X``.
-
-#### 3. A Conexão com SVD
-Calcular ``X^T X`` pode ser caro e impreciso computacionalmente. É aqui que entra a **SVD** que vimos semanas atrás.
-
-Sabemos que qualquer matriz ``X`` pode ser decomposta em ``X = U \Sigma V^T``. Vamos substituir isso na equação da covariância:
-
-```math
-X^T X = (V \Sigma U^T)(U \Sigma V^T)
-```
-
-Como ``U`` é ortogonal, ``U^T U = I``. Logo:
-
-```math
-X^T X = V \Sigma^2 V^T
-```
-
-**Conclusão Brilhante:**
-As colunas de ``V`` (da SVD de ``X``) são **exatamente** os autovetores de ``X^T X``.
-* Portanto, não precisamos montar o problema de otimização no `JuMP`.
-* Basta calcular a SVD da matriz de dados ``X``.
-* A matriz ``V`` contém os eixos ideais (Componentes Principais).
-* Os valores singulares ``\Sigma`` indicam a importância (variância) de cada eixo.
+Na próxima aula (quinta, 09/07) veremos o contraste: o **PCA**, que também
+nasce de um problema de otimização (maximizar variância), mas que — graças à
+estrutura especial do problema — tem **solução fechada**, obtida diretamente
+pela SVD, sem precisar de nenhum solver iterativo.
 """
 
-# ╔═╡ 91212903-17ca-4bbb-b754-0633f0221f13
+# ╔═╡ 544a80c0-0337-4228-b1c3-03116969dc22
 md"""
-### 🎓 Fechando o semestre
-
-Ao longo do curso vimos: representação numérica e erros de arredondamento,
-implementação de algoritmos em linguagem de alto nível, visualização de
-dados, e o uso de bibliotecas de computação científica. Nas últimas duas
-aulas juntamos tudo isso em torno de um só tema — otimização:
-
-* Quando o problema é **linear**, o `HiGHS` encontra o ótimo global de forma
-  exata e eficiente.
-* Quando o problema é **não-linear sem estrutura especial** (curva logística),
-  precisamos de um solver iterativo como o `Ipopt`, que pode ficar preso em
-  mínimos locais e depende de um bom chute inicial.
-* Quando o problema **tem estrutura especial** (maximizar variância sujeito
-  a uma norma, como no PCA), a Álgebra Linear nos dá a solução exata de
-  graça, via SVD — sem iteração nenhuma.
-
-Saber identificar em qual desses três casos um problema se encaixa é, na
-prática, a habilidade mais importante que levamos desta disciplina.
+# 📝 Exercícios — Semana 18, Aula 01
 """
 
-# ╔═╡ 78e2d8dc-28ee-4c0a-ac4b-806e43df747b
+# ╔═╡ d1288104-de40-4e20-a1fc-954c6ebc105c
 md"""
-# 📝 Exercícios — Semana 18, Aula 02
+### Exercício 1.1 — Conceitual
+
+Por que este problema **não pode** ser formulado como Programação Linear e
+resolvido com o `HiGHS`? Identifique especificamente onde a não-linearidade
+aparece na função $N(t) = \dfrac{L}{1 + e^{-k(t-t_0)}}$.
 """
 
-# ╔═╡ a621c19b-cf77-4b50-976a-e4958614c105
+# ╔═╡ 4b3d1860-774b-410b-a0af-5445a6da8491
 md"""
-### Exercício 2.1 — Conceitual
-
-Explique, em suas próprias palavras, por que o PCA **não precisa** de um
-solver como o Ipopt, enquanto o ajuste da curva logística da última aula
-precisou. Aponte especificamente qual propriedade da restrição $\|w\|=1$
-e da função objetivo $w^\top X^\top X w$ torna isso possível.
+> **Gabarito 1.1.** A não-linearidade aparece de duas formas: (i) os parâmetros
+> $k$ e $t_0$ aparecem dentro de uma exponencial, e não multiplicando
+> linearmente as variáveis de decisão; (ii) mesmo fixando $k$ e $t_0$, a
+> função ainda envolve uma razão ($L$ dividido por uma expressão que depende
+> de $t$), o que não é uma combinação linear dos parâmetros. Em Programação
+> Linear, tanto a função objetivo quanto as restrições precisam ser
+> combinações lineares das variáveis de decisão — aqui isso simplesmente não
+> ocorre, então o `HiGHS` (que resolve apenas problemas lineares/inteiros
+> mistos) não serve; precisamos de um solver de NLP como o `Ipopt`.
 """
 
-# ╔═╡ 90e63e69-d107-417e-a49f-1f80adf461eb
+# ╔═╡ cef56bc3-8e5e-43a9-9565-7669e4853dea
 md"""
-> **Gabarito 2.1.** O problema do PCA é maximizar uma **forma quadrática**
-> ($w^\top X^\top X w$) sujeita a uma restrição de **norma unitária**
-> ($\|w\|=1$). Esse tipo específico de problema — otimizar uma forma
-> quadrática na esfera unitária — tem solução conhecida em forma fechada: o
-> multiplicador de Lagrange leva diretamente a um problema de autovalores
-> ($X^\top X\, w = \lambda w$), que é resolvido de forma exata e não-iterativa
-> pela SVD. Já a curva logística envolve os parâmetros $L, k, t_0$ dentro de
-> uma exponencial de forma que não existe nenhuma transformação algébrica
-> que reduza o problema a "resolver um sistema linear" — não há estrutura
-> especial para explorar, então resta o caminho genérico: descida iterativa
-> do gradiente/Hessiana (Ipopt).
+### Exercício 1.2 — Comparando modelos
+
+Modifique o modelo para ajustar os mesmos dados (`semanas`, `vendas_observadas`)
+a um crescimento **exponencial simples** (modelo de Malthus),
+$N(t) = N_0 e^{rt}$, em vez do modelo logístico. Monte o problema de mínimos
+quadrados não-lineares no `JuMP`/`Ipopt` e compare o SSE (soma dos quadrados
+dos resíduos) final com o do modelo logístico.
+
+Complete a célula abaixo (pode copiar a estrutura da célula do modelo
+logístico feita em aula):
 """
 
-# ╔═╡ ae84e097-58d4-4445-a74a-5d632c6b539f
-md"""
-### Exercício 2.2 — Prático
-
-Refaça a projeção usando as **três primeiras** componentes principais
-(em vez de duas) e crie um gráfico de dispersão 3D (`scatter3d` do pacote
-`Plots`) das cervejas nesse novo espaço. Complete a célula abaixo:
-"""
-
-# ╔═╡ c99b3a94-d1c8-41de-b363-52422da5a280
+# ╔═╡ da22100e-0a9a-4f59-93de-482160ba29f3
 begin
-    # Complete aqui: projeção em 3 componentes principais e scatter3d
-    # X_3D = X_cent * V[:, 1:3]
-    # scatter3d(X_3D[:,1], X_3D[:,2], X_3D[:,3],
-    #     xlabel="PC1", ylabel="PC2", zlabel="PC3",
-    #     title="Mapa PCA das Cervejas (5D -> 3D)", legend=false)
+    # Complete aqui: modelo exponencial simples N(t) = N0 * exp(r*t)
+    # modelo_exp = Model(Ipopt.Optimizer)
+    # @variable(modelo_exp, N0 >= 0, start=...)
+    # @variable(modelo_exp, r >= 0, start=...)
+    # @objective(modelo_exp, Min, sum((N0*exp(r*semanas[i]) - vendas_observadas[i])^2 for i in 1:length(semanas)))
+    # optimize!(modelo_exp)
 end
 
-# ╔═╡ e2ba42f5-89e2-4eff-87a5-b30736fd0669
+# ╔═╡ d2d87f87-e116-4b2f-aeca-79245c2a41c1
 md"""
-> **Gabarito 2.2.**
+> **Gabarito 1.2.** O modelo exponencial simples deve apresentar um SSE bem
+> maior que o logístico. Isso acontece porque a exponencial pura não tem
+> "teto" — ela cresce sem limite — e por isso não consegue capturar a
+> desaceleração observada nas últimas semanas (o mercado saturando). O
+> modelo logístico tem um grau de liberdade a mais ($L$) que captura
+> exatamente esse comportamento. Isso ilustra um ponto central de modelagem:
+> um modelo com melhor ajuste não é necessariamente "melhor" só por ter mais
+> parâmetros — aqui, o parâmetro extra tem justificativa física clara
+> (existência de um mercado finito).
 >
 > ```julia
-> X_3D = X_cent * V[:, 1:3]
-> scatter3d(X_3D[:,1], X_3D[:,2], X_3D[:,3],
->     xlabel="PC1", ylabel="PC2", zlabel="PC3",
->     title="Mapa PCA das Cervejas (5D -> 3D)", legend=false)
+> modelo_exp = Model(Ipopt.Optimizer)
+> @variable(modelo_exp, N0 >= 0, start=100)
+> @variable(modelo_exp, r >= 0, start=0.3)
+> @objective(modelo_exp, Min,
+>     sum((N0*exp(r*semanas[i]) - vendas_observadas[i])^2 for i in 1:length(semanas)))
+> optimize!(modelo_exp)
+> value.(modelo_exp[:N0]), value.(modelo_exp[:r])
 > ```
->
-> A ideia central é a mesma da projeção em 2D: `V[:, 1:3]` seleciona as três
-> primeiras colunas de `V` (as três direções de maior variância), e a
-> multiplicação `X_cent * V[:, 1:3]` projeta cada cerveja (linha de
-> `X_cent`) nesse novo sistema de coordenadas de 3 eixos.
 """
 
-# ╔═╡ 43701823-7f72-492f-9e1d-1becf4543dcb
+# ╔═╡ 03f5d2cf-1f7b-4525-bb71-935b377daa26
 md"""
-### Exercício 2.3 — Interpretação
+### Exercício 1.3 — Sensibilidade ao chute inicial
 
-Observando o `scree plot` gerado em aula, quantas componentes principais
-você escolheria manter se o critério fosse "explicar pelo menos 95% da
-variância total"? Escreva o código que calcula automaticamente esse número
-mínimo de componentes a partir do vetor `variancia_relativa`.
+No modelo logístico visto em aula, o chute inicial foi `start=0.5` para $k$.
+O que você espera que aconteça se mudarmos para `start=5.0`? E se mudarmos
+o chute de $t_0$ para `start=100`? Teste e explique o que observa em termos
+de convergência do Ipopt.
 """
 
-# ╔═╡ bc7e4a47-7e7a-4bcf-a0f5-e103a483b525
+# ╔═╡ 6dd8b600-7b83-4c13-bfc1-3420d3cae94c
 md"""
-> **Gabarito 2.3.**
+> **Gabarito 1.3.** Problemas de otimização não-linear em geral não são
+> convexos, então o Ipopt (um método de ponto interior baseado em
+> gradiente/Hessiana) pode convergir para um **mínimo local** diferente
+> dependendo do chute inicial, ou até falhar em convergir se o chute estiver
+> em uma região onde a função objetivo tem gradiente numericamente instável
+> (por exemplo, $t_0 = 100$ está muito fora do intervalo de dados, $1$ a
+> $10$, então a exponencial $e^{-k(t-t_0)}$ fica extremamente grande ou
+> pequena, gerando overflow/underflow numérico). Isso contrasta diretamente
+> com a Programação Linear, onde qualquer vértice factível encontrado pelo
+> simplex leva à solução ótima global — não há "sorte" envolvida na escolha
+> do ponto de partida.
+"""
+
+# ╔═╡ c4edce84-47d7-44cb-9dd8-229ec47f75f0
+md"""
+### Exercício 1.4 — Formulação (farmacocinética)
+
+Em farmacocinética, a concentração de um medicamento no sangue após uma dose
+oral costuma ser modelada por uma soma de duas exponenciais (modelo
+biexponencial):
+
+```math
+C(t) = A\,e^{-\alpha t} - A\,e^{-\beta t}
+```
+
+onde $C(t)$ é a concentração no instante $t$, e $A$, $\alpha$, $\beta > 0$ são
+parâmetros a ajustar a partir de medições $(t_i, C_i)$ feitas em pacientes.
+**Sem resolver**, escreva a função objetivo de mínimos quadrados não-lineares
+que o `JuMP`/`Ipopt` deveria minimizar para ajustar esse modelo a $n$ medições.
+"""
+
+# ╔═╡ 33e93c36-e4f3-439b-94e7-6c21e96fc76e
+md"""
+> **Gabarito 1.4.**
 >
-> ```julia
-> k_min = findfirst(cumsum(variancia_relativa) .>= 0.95)
+> ```math
+> \min_{A,\,\alpha,\,\beta} \quad \sum_{i=1}^{n} \Big( C_i - \big(A\,e^{-\alpha t_i} - A\,e^{-\beta t_i}\big) \Big)^2
 > ```
 >
-> `cumsum(variancia_relativa)` acumula a variância explicada componente a
-> componente; `findfirst(... .>= 0.95)` retorna o índice da primeira posição
-> em que esse acumulado atinge (ou ultrapassa) 95%. Esse é exatamente o
-> critério mais usado na prática para decidir quantas componentes manter em
-> uma redução de dimensionalidade — trocando precisão perfeita por um espaço
-> muito mais compacto e visualizável.
+> A estrutura é idêntica à do exemplo da cerveja: soma dos quadrados dos
+> resíduos entre o dado observado ($C_i$) e o modelo teórico avaliado em
+> $t_i$. A única diferença é a forma funcional do modelo — aqui, uma
+> combinação de duas exponenciais em vez de uma logística. Isso reforça que
+> o "molde" de mínimos quadrados não-lineares se aplica a qualquer modelo
+> paramétrico não-linear, bastando trocar a expressão dentro do somatório.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Ipopt = "b6b21f68-93f8-5de0-b562-5493be1d77c9"
+JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
-DataFrames = "~1.8.1"
+Ipopt = "~1.11.0"
+JuMP = "~1.29.1"
 Plots = "~1.41.1"
-StatsBase = "~0.34.9"
+PlutoUI = "~0.7.75"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -400,7 +396,19 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.12.2"
 manifest_format = "2.0"
-project_hash = "99108f540ec575c59a803e562d5b669a8ceaa6d0"
+project_hash = "9da25c342174554885fb92007d1f13b24b604981"
+
+[[deps.ASL_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "6252039f98492252f9e47c312c8ffda0e3b9e78d"
+uuid = "ae81ac8f-d209-56e5-92de-9978fef736f9"
+version = "0.1.3+0"
+
+[[deps.AbstractPlutoDingetjes]]
+deps = ["Pkg"]
+git-tree-sha1 = "6e1d2a35f2f90a4bc7c2ed98079b2ba09c35b83a"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
+version = "1.3.2"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -420,6 +428,12 @@ version = "1.11.0"
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 version = "1.11.0"
 
+[[deps.BenchmarkTools]]
+deps = ["Compat", "JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
+git-tree-sha1 = "7fecfb1123b8d0232218e2da0c213004ff15358d"
+uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+version = "1.6.3"
+
 [[deps.BitFlags]]
 git-tree-sha1 = "0691e34b3bb8be9307330f88d1a3c3f25466c24d"
 uuid = "d1d4a3ce-64b1-5f1a-9ba4-7e7e69966f35"
@@ -436,6 +450,12 @@ deps = ["Artifacts", "Bzip2_jll", "CompilerSupportLibraries_jll", "Fontconfig_jl
 git-tree-sha1 = "fde3bf89aead2e723284a8ff9cdf5b551ed700e8"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.18.5+0"
+
+[[deps.CodecBzip2]]
+deps = ["Bzip2_jll", "TranscodingStreams"]
+git-tree-sha1 = "84990fa864b7f2b4901901ca12736e45ee79068c"
+uuid = "523fee87-0ab8-5b00-afb7-3ecf72e48cfd"
+version = "0.8.5"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -464,18 +484,22 @@ deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "Requires", "Statist
 git-tree-sha1 = "8b3b6f87ce8f65a2b4f857528fd8d70086cd72b1"
 uuid = "c3611d14-8923-5661-9e6a-0046d554d3a4"
 version = "0.11.0"
+weakdeps = ["SpecialFunctions"]
 
     [deps.ColorVectorSpace.extensions]
     SpecialFunctionsExt = "SpecialFunctions"
-
-    [deps.ColorVectorSpace.weakdeps]
-    SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [[deps.Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
 git-tree-sha1 = "37ea44092930b1811e666c3bc38065d7d87fcc74"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.13.1"
+
+[[deps.CommonSubexpressions]]
+deps = ["MacroTools"]
+git-tree-sha1 = "cda2cfaebb4be89c9084adaca7dd7333369715c5"
+uuid = "bbf7d656-a473-5ed7-a52c-81e309532950"
+version = "0.3.1"
 
 [[deps.Compat]]
 deps = ["TOML", "UUIDs"]
@@ -503,32 +527,16 @@ git-tree-sha1 = "439e35b0b36e2e5881738abc8857bd92ad6ff9a8"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.6.3"
 
-[[deps.Crayons]]
-git-tree-sha1 = "249fe38abf76d48563e2f4556bebd215aa317e15"
-uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
-version = "4.1.1"
-
 [[deps.DataAPI]]
 git-tree-sha1 = "abe83f3a2f1b857aac70ef8b269080af17764bbe"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 version = "1.16.0"
-
-[[deps.DataFrames]]
-deps = ["Compat", "DataAPI", "DataStructures", "Future", "InlineStrings", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrecompileTools", "PrettyTables", "Printf", "Random", "Reexport", "SentinelArrays", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
-git-tree-sha1 = "d8928e9169ff76c6281f39a659f9bca3a573f24c"
-uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "1.8.1"
 
 [[deps.DataStructures]]
 deps = ["OrderedCollections"]
 git-tree-sha1 = "e357641bb3e0638d353c4b29ea0e40ea644066a6"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 version = "0.19.3"
-
-[[deps.DataValueInterfaces]]
-git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
-uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
-version = "1.0.0"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -546,6 +554,18 @@ deps = ["Mmap"]
 git-tree-sha1 = "9e2f36d3c96a820c678f2f1f1782582fcf685bae"
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 version = "1.9.1"
+
+[[deps.DiffResults]]
+deps = ["StaticArraysCore"]
+git-tree-sha1 = "782dd5f4561f5d267313f23853baaaa4c52ea621"
+uuid = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
+version = "1.1.0"
+
+[[deps.DiffRules]]
+deps = ["IrrationalConstants", "LogExpFunctions", "NaNMath", "Random", "SpecialFunctions"]
+git-tree-sha1 = "23163d55f885173722d1e4cf0f6110cdbaf7e272"
+uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
+version = "1.15.1"
 
 [[deps.DocStringExtensions]]
 git-tree-sha1 = "7442a5dfe1ebb773c29cc2962a8980f47221d76c"
@@ -608,6 +628,18 @@ git-tree-sha1 = "9c68794ef81b08086aeb32eeaf33531668d5f5fc"
 uuid = "1fa38f19-a742-5d3f-a2b9-30dd87b9d5f8"
 version = "1.3.7"
 
+[[deps.ForwardDiff]]
+deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions"]
+git-tree-sha1 = "dc41303865a16274ecb8450c220021ce1e0cf05f"
+uuid = "f6369f11-7733-5829-9624-2563aa707210"
+version = "1.2.1"
+
+    [deps.ForwardDiff.extensions]
+    ForwardDiffStaticArraysExt = "StaticArrays"
+
+    [deps.ForwardDiff.weakdeps]
+    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
 [[deps.FreeType2_jll]]
 deps = ["Artifacts", "Bzip2_jll", "JLLWrappers", "Libdl", "Zlib_jll"]
 git-tree-sha1 = "2c5512e11c791d1baed2049c5652441b28fc6a31"
@@ -619,11 +651,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "7a214fdac5ed5f59a22c2d9a885a16da1c74bbc7"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.17+0"
-
-[[deps.Future]]
-deps = ["Random"]
-uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
-version = "1.11.0"
 
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll", "libdecor_jll", "xkbcommon_jll"]
@@ -684,38 +711,55 @@ git-tree-sha1 = "f923f9a774fcf3f5cb761bfa43aeadd689714813"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "8.5.1+0"
 
-[[deps.InlineStrings]]
-git-tree-sha1 = "8f3d257792a522b4601c24a577954b0a8cd7334d"
-uuid = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
-version = "1.4.5"
+[[deps.Hwloc_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "XML2_jll", "Xorg_libpciaccess_jll"]
+git-tree-sha1 = "3d468106a05408f9f7b6f161d9e7715159af247b"
+uuid = "e33a78d0-f292-5ffc-b300-72abe9b543c8"
+version = "2.12.2+0"
 
-    [deps.InlineStrings.extensions]
-    ArrowTypesExt = "ArrowTypes"
-    ParsersExt = "Parsers"
+[[deps.Hyperscript]]
+deps = ["Test"]
+git-tree-sha1 = "179267cfa5e712760cd43dcae385d7ea90cc25a4"
+uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
+version = "0.0.5"
 
-    [deps.InlineStrings.weakdeps]
-    ArrowTypes = "31f734f8-188a-4ce0-8406-c8a06bd891cd"
-    Parsers = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
+[[deps.HypertextLiteral]]
+deps = ["Tricks"]
+git-tree-sha1 = "7134810b1afce04bbc1045ca1985fbe81ce17653"
+uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
+version = "0.9.5"
+
+[[deps.IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "0ee181ec08df7d7c911901ea38baf16f755114dc"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "1.0.0"
 
 [[deps.InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 version = "1.11.0"
 
-[[deps.InvertedIndices]]
-git-tree-sha1 = "6da3c4316095de0f5ee2ebd875df8721e7e0bdbe"
-uuid = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
-version = "1.3.1"
+[[deps.Ipopt]]
+deps = ["Ipopt_jll", "LinearAlgebra", "OpenBLAS32_jll", "PrecompileTools"]
+git-tree-sha1 = "ef90a75a3ee8c2b170f6c177d4d003348dd30f67"
+uuid = "b6b21f68-93f8-5de0-b562-5493be1d77c9"
+version = "1.11.0"
+weakdeps = ["MathOptInterface"]
+
+    [deps.Ipopt.extensions]
+    IpoptMathOptInterfaceExt = "MathOptInterface"
+
+[[deps.Ipopt_jll]]
+deps = ["ASL_jll", "Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "MUMPS_seq_jll", "SPRAL_jll", "libblastrampoline_jll"]
+git-tree-sha1 = "b33cbc78b8d4de87d18fcd705054a82e2999dbac"
+uuid = "9cc047cb-c261-5740-88fc-0cf96f7bdcc7"
+version = "300.1400.1900+0"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "b2d91fe939cae05960e760110b328288867b5758"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.2.6"
-
-[[deps.IteratorInterfaceExtensions]]
-git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
-uuid = "82899510-4779-5014-852e-03e436cf321d"
-version = "1.0.0"
 
 [[deps.JLFzf]]
 deps = ["REPL", "Random", "fzf_jll"]
@@ -731,9 +775,9 @@ version = "1.7.1"
 
 [[deps.JSON]]
 deps = ["Dates", "Logging", "Parsers", "PrecompileTools", "StructUtils", "UUIDs", "Unicode"]
-git-tree-sha1 = "5b6bb73f555bc753a6153deec3717b8904f5551c"
+git-tree-sha1 = "06ea418d0c95878c8f3031023951edcf25b9e0ef"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
-version = "1.3.0"
+version = "1.2.0"
 
     [deps.JSON.extensions]
     JSONArrowExt = ["ArrowTypes"]
@@ -741,11 +785,35 @@ version = "1.3.0"
     [deps.JSON.weakdeps]
     ArrowTypes = "31f734f8-188a-4ce0-8406-c8a06bd891cd"
 
+[[deps.JSON3]]
+deps = ["Dates", "Mmap", "Parsers", "PrecompileTools", "StructTypes", "UUIDs"]
+git-tree-sha1 = "411eccfe8aba0814ffa0fdf4860913ed09c34975"
+uuid = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+version = "1.14.3"
+
+    [deps.JSON3.extensions]
+    JSON3ArrowExt = ["ArrowTypes"]
+
+    [deps.JSON3.weakdeps]
+    ArrowTypes = "31f734f8-188a-4ce0-8406-c8a06bd891cd"
+
 [[deps.JpegTurbo_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "4255f0032eafd6451d707a51d5f0248b8a165e4d"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "3.1.3+0"
+
+[[deps.JuMP]]
+deps = ["LinearAlgebra", "MacroTools", "MathOptInterface", "MutableArithmetics", "OrderedCollections", "PrecompileTools", "Printf", "SparseArrays"]
+git-tree-sha1 = "b201ac010ecdcc3617649175fa59c3dbd9bf96a0"
+uuid = "4076af6c-e467-56ae-b986-b466b2749572"
+version = "1.29.1"
+
+    [deps.JuMP.extensions]
+    JuMPDimensionalDataExt = "DimensionalData"
+
+    [deps.JuMP.weakdeps]
+    DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
 
 [[deps.JuliaSyntaxHighlighting]]
 deps = ["StyledStrings"]
@@ -895,6 +963,23 @@ git-tree-sha1 = "f00544d95982ea270145636c181ceda21c4e2575"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 version = "1.2.0"
 
+[[deps.METIS_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "2eefa8baa858871ae7770c98c3c2a7e46daba5b4"
+uuid = "d00139f3-1899-568f-a2f0-47f597d42d70"
+version = "5.1.3+0"
+
+[[deps.MIMEs]]
+git-tree-sha1 = "c64d943587f7187e751162b3b84445bbbd79f691"
+uuid = "6c6e2e6c-3030-632d-7369-2d6c69616d65"
+version = "1.1.0"
+
+[[deps.MUMPS_seq_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "METIS_jll", "libblastrampoline_jll"]
+git-tree-sha1 = "fc0c8442887b48c15aec2b1787a5fc812a99b2fd"
+uuid = "d7ed1dd3-d0ae-5e8e-bfb4-87a502085b8d"
+version = "500.800.100+0"
+
 [[deps.MacroTools]]
 git-tree-sha1 = "1e0228a030642014fe5cfe68c2c0a818f9e3f522"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
@@ -904,6 +989,12 @@ version = "0.5.16"
 deps = ["Base64", "JuliaSyntaxHighlighting", "StyledStrings"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 version = "1.11.0"
+
+[[deps.MathOptInterface]]
+deps = ["BenchmarkTools", "CodecBzip2", "CodecZlib", "DataStructures", "ForwardDiff", "JSON3", "LinearAlgebra", "MutableArithmetics", "NaNMath", "OrderedCollections", "PrecompileTools", "Printf", "SparseArrays", "SpecialFunctions", "Test"]
+git-tree-sha1 = "700acfa97a2b23569c0a6dcfcd85f183d7258e31"
+uuid = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
+version = "1.45.0"
 
 [[deps.MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "MozillaCACerts_jll", "NetworkOptions", "Random", "Sockets"]
@@ -936,6 +1027,12 @@ version = "1.11.0"
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 version = "2025.5.20"
 
+[[deps.MutableArithmetics]]
+deps = ["LinearAlgebra", "SparseArrays", "Test"]
+git-tree-sha1 = "5801388fbfb801822721b5dee720a55a6d03d41d"
+uuid = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
+version = "1.6.6"
+
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
 git-tree-sha1 = "9b8215b1ee9e78a293f99797cd31375471b2bcae"
@@ -951,6 +1048,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "b6aa4566bb7ae78498a5e68943863fa8b5231b59"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
 version = "1.3.6+0"
+
+[[deps.OpenBLAS32_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "ece4587683695fe4c5f20e990da0ed7e83c351e7"
+uuid = "656ef2d0-ae68-5445-9ca0-591084a874a2"
+version = "0.3.29+0"
 
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
@@ -972,6 +1075,12 @@ version = "1.6.0"
 deps = ["Artifacts", "Libdl"]
 uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
 version = "3.5.4+0"
+
+[[deps.OpenSpecFun_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "1346c9208249809840c91b26703912dff463d335"
+uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
+version = "0.5.6+0"
 
 [[deps.Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -1048,11 +1157,11 @@ version = "1.41.1"
     ImageInTerminal = "d8c32880-2388-543b-8c61-d9f865259254"
     Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
-[[deps.PooledArrays]]
-deps = ["DataAPI", "Future"]
-git-tree-sha1 = "36d8b4b899628fb92c2749eb488d884a926614d3"
-uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
-version = "1.4.3"
+[[deps.PlutoUI]]
+deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Downloads", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
+git-tree-sha1 = "db8a06ef983af758d285665a0398703eb5bc1d66"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.7.75"
 
 [[deps.PrecompileTools]]
 deps = ["Preferences"]
@@ -1066,15 +1175,14 @@ git-tree-sha1 = "0f27480397253da18fe2c12a4ba4eb9eb208bf3d"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
 version = "1.5.0"
 
-[[deps.PrettyTables]]
-deps = ["Crayons", "LaTeXStrings", "Markdown", "PrecompileTools", "Printf", "REPL", "Reexport", "StringManipulation", "Tables"]
-git-tree-sha1 = "c5a07210bd060d6a8491b0ccdee2fa0235fc00bf"
-uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
-version = "3.1.2"
-
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+version = "1.11.0"
+
+[[deps.Profile]]
+deps = ["StyledStrings"]
+uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 version = "1.11.0"
 
 [[deps.PtrArrays]]
@@ -1149,17 +1257,17 @@ version = "1.3.1"
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 version = "0.7.0"
 
+[[deps.SPRAL_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "Hwloc_jll", "JLLWrappers", "Libdl", "METIS_jll", "libblastrampoline_jll"]
+git-tree-sha1 = "4f9833187a65ead66ed1907b44d5f20606282e3f"
+uuid = "319450e9-13b8-58e8-aa9f-8fd1420848ab"
+version = "2025.5.20+0"
+
 [[deps.Scratch]]
 deps = ["Dates"]
 git-tree-sha1 = "9b81b8393e50b7d4e6d0a9f14e192294d3b7c109"
 uuid = "6c6a2e73-6563-6170-7368-637461726353"
 version = "1.3.0"
-
-[[deps.SentinelArrays]]
-deps = ["Dates", "Random"]
-git-tree-sha1 = "712fb0231ee6f9120e005ccd56297abbc053e7e0"
-uuid = "91c51154-3ec4-41a3-a24f-3f23e20d615c"
-version = "1.4.8"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -1191,11 +1299,28 @@ deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 version = "1.12.0"
 
+[[deps.SpecialFunctions]]
+deps = ["IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
+git-tree-sha1 = "f2685b435df2613e25fc10ad8c26dddb8640f547"
+uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
+version = "2.6.1"
+
+    [deps.SpecialFunctions.extensions]
+    SpecialFunctionsChainRulesCoreExt = "ChainRulesCore"
+
+    [deps.SpecialFunctions.weakdeps]
+    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+
 [[deps.StableRNGs]]
 deps = ["Random"]
 git-tree-sha1 = "95af145932c2ed859b63329952ce8d633719f091"
 uuid = "860ef19b-820b-49d6-a774-d7a799459cd3"
 version = "1.0.3"
+
+[[deps.StaticArraysCore]]
+git-tree-sha1 = "6ab403037779dae8c514bad259f32a447262455a"
+uuid = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
+version = "1.4.4"
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra"]
@@ -1209,27 +1334,27 @@ weakdeps = ["SparseArrays"]
 
 [[deps.StatsAPI]]
 deps = ["LinearAlgebra"]
-git-tree-sha1 = "178ed29fd5b2a2cfc3bd31c13375ae925623ff36"
+git-tree-sha1 = "9d72a13a3f4dd3795a195ac5a44d7d6ff5f552ff"
 uuid = "82ae8749-77ed-4fe6-ae5f-f523153014b0"
-version = "1.8.0"
+version = "1.7.1"
 
 [[deps.StatsBase]]
 deps = ["AliasTables", "DataAPI", "DataStructures", "LinearAlgebra", "LogExpFunctions", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics", "StatsAPI"]
-git-tree-sha1 = "be5733d4a2b03341bdcab91cea6caa7e31ced14b"
+git-tree-sha1 = "064b532283c97daae49e544bb9cb413c26511f8c"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-version = "0.34.9"
+version = "0.34.8"
 
-[[deps.StringManipulation]]
-deps = ["PrecompileTools"]
-git-tree-sha1 = "a3c1536470bf8c5e02096ad4853606d7c8f62721"
-uuid = "892a3eda-7b42-436c-8928-eab12a02cf0e"
-version = "0.4.2"
+[[deps.StructTypes]]
+deps = ["Dates", "UUIDs"]
+git-tree-sha1 = "159331b30e94d7b11379037feeb9b690950cace8"
+uuid = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
+version = "1.11.0"
 
 [[deps.StructUtils]]
 deps = ["Dates", "UUIDs"]
-git-tree-sha1 = "79529b493a44927dd5b13dde1c7ce957c2d049e4"
+git-tree-sha1 = "cd47aa083c9c7bdeb7b92de26deb46d6a33163c9"
 uuid = "ec057cc2-7a8d-4b58-b3b3-92acb9f63b42"
-version = "2.6.0"
+version = "2.5.1"
 
     [deps.StructUtils.extensions]
     StructUtilsMeasurementsExt = ["Measurements"]
@@ -1253,18 +1378,6 @@ deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.3"
 
-[[deps.TableTraits]]
-deps = ["IteratorInterfaceExtensions"]
-git-tree-sha1 = "c06b2f539df1c6efa794486abfb6ed2022561a39"
-uuid = "3783bdb8-4a98-5b6b-af9a-565f29a5fe9c"
-version = "1.0.1"
-
-[[deps.Tables]]
-deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "OrderedCollections", "TableTraits"]
-git-tree-sha1 = "f2c1efbc8f3a609aadf318094f8fc5204bdaf344"
-uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.12.1"
-
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
@@ -1285,6 +1398,11 @@ version = "1.11.0"
 git-tree-sha1 = "0c45878dcfdcfa8480052b6ab162cdd138781742"
 uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 version = "0.11.3"
+
+[[deps.Tricks]]
+git-tree-sha1 = "311349fd1c93a31f783f977a71e8b062a57d4101"
+uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
+version = "0.1.13"
 
 [[deps.URIs]]
 git-tree-sha1 = "bef26fb046d031353ef97a82e3fdb6afe7f21b1a"
@@ -1322,6 +1440,12 @@ deps = ["Artifacts", "EpollShim_jll", "Expat_jll", "JLLWrappers", "Libdl", "Libf
 git-tree-sha1 = "96478df35bbc2f3e1e791bc7a3d0eeee559e60e9"
 uuid = "a2964d1f-97da-50d4-b82a-358c7fce9d89"
 version = "1.24.0+0"
+
+[[deps.XML2_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Zlib_jll"]
+git-tree-sha1 = "80d3930c6347cfce7ccf96bd3bafdf079d9c0390"
+uuid = "02c8fc9c-b97f-50b9-bbe4-9be30ff0a78a"
+version = "2.13.9+0"
 
 [[deps.XZ_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -1400,6 +1524,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libX11_jll"]
 git-tree-sha1 = "7ed9347888fac59a618302ee38216dd0379c480d"
 uuid = "ea2f1a96-1ddc-540d-b46f-429655e07cfa"
 version = "0.9.12+0"
+
+[[deps.Xorg_libpciaccess_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Zlib_jll"]
+git-tree-sha1 = "4909eb8f1cbf6bd4b1c30dd18b2ead9019ef2fad"
+uuid = "a65dc6b1-eb27-53a1-bb3e-dea574b5389e"
+version = "0.18.1+0"
 
 [[deps.Xorg_libxcb_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Xorg_libXau_jll", "Xorg_libXdmcp_jll"]
@@ -1579,34 +1709,28 @@ version = "1.9.2+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─d35d19d4-3655-465c-98b4-6b5fa46d3039
-# ╠═4e1c74c7-a2e1-4242-af24-7402717e79a6
-# ╟─3125b653-f760-4abd-ae30-b891155ee905
-# ╟─929c6c29-b7cf-4897-8a65-54edb2f1dfc4
-# ╠═d721a23b-dc18-4f4f-84eb-6b189315e70a
-# ╟─ac479f8a-6ec6-4cc8-a7a6-112bb47a0fd2
-# ╠═67397c66-00cf-4007-9160-82d41c92811d
-# ╟─45d13700-eba7-4a54-b607-ed5b851cecff
-# ╠═ac9bc4be-37a4-4513-ae63-03d6306965fc
-# ╟─10376717-668e-4405-b614-774a797a706e
-# ╠═50bf2745-5bdb-44eb-a206-a93bd12e808f
-# ╠═d11bd815-3a8f-404e-b505-d1f99867ff4d
-# ╠═0db852a0-d1b2-4501-bb91-10fb7a350a7e
-# ╠═8db4e104-7cf5-4819-89c8-409caed57136
-# ╠═1818e6e2-1b82-4aae-9f82-baffa5b2eb67
-# ╟─9629e55b-5dd5-4c1b-ba8c-baaf23706bc9
-# ╠═05eb8197-f29d-4af4-bfb5-795a81956bcf
-# ╠═f4a71e01-75d1-4bd0-a0b0-0d8320ee5388
-# ╠═0d5e56a0-1503-4333-a489-7c6a63e50b72
-# ╟─db262897-9848-4801-a6d2-4e295eb19c36
-# ╟─91212903-17ca-4bbb-b754-0633f0221f13
-# ╟─78e2d8dc-28ee-4c0a-ac4b-806e43df747b
-# ╟─a621c19b-cf77-4b50-976a-e4958614c105
-# ╟─90e63e69-d107-417e-a49f-1f80adf461eb
-# ╟─ae84e097-58d4-4445-a74a-5d632c6b539f
-# ╠═c99b3a94-d1c8-41de-b363-52422da5a280
-# ╟─e2ba42f5-89e2-4eff-87a5-b30736fd0669
-# ╟─43701823-7f72-492f-9e1d-1becf4543dcb
-# ╟─bc7e4a47-7e7a-4bcf-a0f5-e103a483b525
+# ╟─5478453b-f0bb-4e01-ad74-644375cd733a
+# ╠═1aa648a8-f58e-49c4-ad2c-93c78922eb06
+# ╟─fa34540a-15bc-4b76-b523-664f2286e779
+# ╟─4b3b27de-448b-4db7-8693-860618667b36
+# ╠═e4155f61-401b-4c57-a253-3cdf168f1c39
+# ╟─d60001d2-871f-4876-ba35-9f4673594823
+# ╟─a43b17cf-8f71-4230-96e2-b3ee2da93545
+# ╠═353beeaf-af5e-4eab-b6d9-ab8d02399b43
+# ╟─f620fa64-fe4e-46c7-a406-bb4a0deeda77
+# ╠═81577644-2add-4174-bf82-b6c0451395d1
+# ╠═a3d312b2-905c-4cf8-96a2-937752ce6598
+# ╠═16eb455b-e56c-4845-8cd0-1b2857310e63
+# ╟─1f38f75d-54d4-4636-947c-bd09a15c33da
+# ╟─544a80c0-0337-4228-b1c3-03116969dc22
+# ╟─d1288104-de40-4e20-a1fc-954c6ebc105c
+# ╟─4b3d1860-774b-410b-a0af-5445a6da8491
+# ╟─cef56bc3-8e5e-43a9-9565-7669e4853dea
+# ╠═da22100e-0a9a-4f59-93de-482160ba29f3
+# ╟─d2d87f87-e116-4b2f-aeca-79245c2a41c1
+# ╟─03f5d2cf-1f7b-4525-bb71-935b377daa26
+# ╟─6dd8b600-7b83-4c13-bfc1-3420d3cae94c
+# ╟─c4edce84-47d7-44cb-9dd8-229ec47f75f0
+# ╟─33e93c36-e4f3-439b-94e7-6c21e96fc76e
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
