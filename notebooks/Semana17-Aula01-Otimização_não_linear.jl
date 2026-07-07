@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.21
+# v0.20.27
 
 using Markdown
 using InteractiveUtils
@@ -16,20 +16,26 @@ macro bind(def, element)
     #! format: on
 end
 
-# ╔═╡ 5478453b-f0bb-4e01-ad74-644375cd733a
-md"""
-## UFSC/Blumenau
-### MAT4642 - Introdução à Matemática Computacional
-### Prof. Luiz-Rafael Santos
-### Semana 18 - Aula 01 (07/07/2026)
-"""
-
 # ╔═╡ 1aa648a8-f58e-49c4-ad2c-93c78922eb06
 begin
     using Plots
     using Random # Para gerar dados com ruído
     using PlutoUI
 end
+
+# ╔═╡ 81577644-2add-4174-bf82-b6c0451395d1
+begin
+    using JuMP
+    using Ipopt
+end
+
+# ╔═╡ 5478453b-f0bb-4e01-ad74-644375cd733a
+md"""
+## UFSC/Blumenau
+### MAT4642 - Introdução à Matemática Computacional
+### Prof. Luiz-Rafael Santos
+### Semana 17 - Aula 01 (07/07/2026)
+"""
 
 # ╔═╡ fa34540a-15bc-4b76-b523-664f2286e779
 md"""
@@ -167,12 +173,6 @@ denominador), não existe fórmula mágica. Precisamos de um algoritmo (o Solver
 **Ipopt**) que "desce o morro" do erro iterativamente até achar o fundo do vale.
 """
 
-# ╔═╡ 81577644-2add-4174-bf82-b6c0451395d1
-begin
-    using JuMP
-    using Ipopt
-end
-
 # ╔═╡ a3d312b2-905c-4cf8-96a2-937752ce6598
 begin
     # 1. Escolher o Solver Não-Linear
@@ -243,7 +243,7 @@ pela SVD, sem precisar de nenhum solver iterativo.
 
 # ╔═╡ 544a80c0-0337-4228-b1c3-03116969dc22
 md"""
-# 📝 Exercícios — Semana 18, Aula 01
+# 📝 Exercícios — Semana 17, Aula 01
 """
 
 # ╔═╡ d1288104-de40-4e20-a1fc-954c6ebc105c
@@ -394,9 +394,9 @@ PlutoUI = "~0.7.75"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.12.2"
+julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "9da25c342174554885fb92007d1f13b24b604981"
+project_hash = "6202c46cd5a5938f8dba2b60dca6a8f77e5b3deb"
 
 [[deps.ASL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1025,7 +1025,7 @@ version = "1.11.0"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2025.5.20"
+version = "2025.11.4"
 
 [[deps.MutableArithmetics]]
 deps = ["LinearAlgebra", "SparseArrays", "Test"]
@@ -1119,7 +1119,7 @@ version = "0.44.2+0"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "Random", "SHA", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.12.0"
+version = "1.12.1"
 weakdeps = ["REPL"]
 
     [deps.Pkg.extensions]
