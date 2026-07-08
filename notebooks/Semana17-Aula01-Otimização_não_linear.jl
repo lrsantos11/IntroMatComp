@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.27
+# v0.20.21
 
 using Markdown
 using InteractiveUtils
@@ -16,19 +16,6 @@ macro bind(def, element)
     #! format: on
 end
 
-# ╔═╡ 1aa648a8-f58e-49c4-ad2c-93c78922eb06
-begin
-    using Plots
-    using Random # Para gerar dados com ruído
-    using PlutoUI
-end
-
-# ╔═╡ 81577644-2add-4174-bf82-b6c0451395d1
-begin
-    using JuMP
-    using Ipopt
-end
-
 # ╔═╡ 5478453b-f0bb-4e01-ad74-644375cd733a
 md"""
 ## UFSC/Blumenau
@@ -36,6 +23,13 @@ md"""
 ### Prof. Luiz-Rafael Santos
 ### Semana 17 - Aula 01 (07/07/2026)
 """
+
+# ╔═╡ 1aa648a8-f58e-49c4-ad2c-93c78922eb06
+begin
+    using Plots
+    using Random # Para gerar dados com ruído
+    using PlutoUI
+end
 
 # ╔═╡ fa34540a-15bc-4b76-b523-664f2286e779
 md"""
@@ -173,6 +167,12 @@ denominador), não existe fórmula mágica. Precisamos de um algoritmo (o Solver
 **Ipopt**) que "desce o morro" do erro iterativamente até achar o fundo do vale.
 """
 
+# ╔═╡ 81577644-2add-4174-bf82-b6c0451395d1
+begin
+    using JuMP
+    using Ipopt
+end
+
 # ╔═╡ a3d312b2-905c-4cf8-96a2-937752ce6598
 begin
     # 1. Escolher o Solver Não-Linear
@@ -255,19 +255,6 @@ resolvido com o `HiGHS`? Identifique especificamente onde a não-linearidade
 aparece na função $N(t) = \dfrac{L}{1 + e^{-k(t-t_0)}}$.
 """
 
-# ╔═╡ 4b3d1860-774b-410b-a0af-5445a6da8491
-md"""
-> **Gabarito 1.1.** A não-linearidade aparece de duas formas: (i) os parâmetros
-> $k$ e $t_0$ aparecem dentro de uma exponencial, e não multiplicando
-> linearmente as variáveis de decisão; (ii) mesmo fixando $k$ e $t_0$, a
-> função ainda envolve uma razão ($L$ dividido por uma expressão que depende
-> de $t$), o que não é uma combinação linear dos parâmetros. Em Programação
-> Linear, tanto a função objetivo quanto as restrições precisam ser
-> combinações lineares das variáveis de decisão — aqui isso simplesmente não
-> ocorre, então o `HiGHS` (que resolve apenas problemas lineares/inteiros
-> mistos) não serve; precisamos de um solver de NLP como o `Ipopt`.
-"""
-
 # ╔═╡ cef56bc3-8e5e-43a9-9565-7669e4853dea
 md"""
 ### Exercício 1.2 — Comparando modelos
@@ -292,29 +279,6 @@ begin
     # optimize!(modelo_exp)
 end
 
-# ╔═╡ d2d87f87-e116-4b2f-aeca-79245c2a41c1
-md"""
-> **Gabarito 1.2.** O modelo exponencial simples deve apresentar um SSE bem
-> maior que o logístico. Isso acontece porque a exponencial pura não tem
-> "teto" — ela cresce sem limite — e por isso não consegue capturar a
-> desaceleração observada nas últimas semanas (o mercado saturando). O
-> modelo logístico tem um grau de liberdade a mais ($L$) que captura
-> exatamente esse comportamento. Isso ilustra um ponto central de modelagem:
-> um modelo com melhor ajuste não é necessariamente "melhor" só por ter mais
-> parâmetros — aqui, o parâmetro extra tem justificativa física clara
-> (existência de um mercado finito).
->
-> ```julia
-> modelo_exp = Model(Ipopt.Optimizer)
-> @variable(modelo_exp, N0 >= 0, start=100)
-> @variable(modelo_exp, r >= 0, start=0.3)
-> @objective(modelo_exp, Min,
->     sum((N0*exp(r*semanas[i]) - vendas_observadas[i])^2 for i in 1:length(semanas)))
-> optimize!(modelo_exp)
-> value.(modelo_exp[:N0]), value.(modelo_exp[:r])
-> ```
-"""
-
 # ╔═╡ 03f5d2cf-1f7b-4525-bb71-935b377daa26
 md"""
 ### Exercício 1.3 — Sensibilidade ao chute inicial
@@ -323,21 +287,6 @@ No modelo logístico visto em aula, o chute inicial foi `start=0.5` para $k$.
 O que você espera que aconteça se mudarmos para `start=5.0`? E se mudarmos
 o chute de $t_0$ para `start=100`? Teste e explique o que observa em termos
 de convergência do Ipopt.
-"""
-
-# ╔═╡ 6dd8b600-7b83-4c13-bfc1-3420d3cae94c
-md"""
-> **Gabarito 1.3.** Problemas de otimização não-linear em geral não são
-> convexos, então o Ipopt (um método de ponto interior baseado em
-> gradiente/Hessiana) pode convergir para um **mínimo local** diferente
-> dependendo do chute inicial, ou até falhar em convergir se o chute estiver
-> em uma região onde a função objetivo tem gradiente numericamente instável
-> (por exemplo, $t_0 = 100$ está muito fora do intervalo de dados, $1$ a
-> $10$, então a exponencial $e^{-k(t-t_0)}$ fica extremamente grande ou
-> pequena, gerando overflow/underflow numérico). Isso contrasta diretamente
-> com a Programação Linear, onde qualquer vértice factível encontrado pelo
-> simplex leva à solução ótima global — não há "sorte" envolvida na escolha
-> do ponto de partida.
 """
 
 # ╔═╡ c4edce84-47d7-44cb-9dd8-229ec47f75f0
@@ -356,22 +305,6 @@ onde $C(t)$ é a concentração no instante $t$, e $A$, $\alpha$, $\beta > 0$ s�
 parâmetros a ajustar a partir de medições $(t_i, C_i)$ feitas em pacientes.
 **Sem resolver**, escreva a função objetivo de mínimos quadrados não-lineares
 que o `JuMP`/`Ipopt` deveria minimizar para ajustar esse modelo a $n$ medições.
-"""
-
-# ╔═╡ 33e93c36-e4f3-439b-94e7-6c21e96fc76e
-md"""
-> **Gabarito 1.4.**
->
-> ```math
-> \min_{A,\,\alpha,\,\beta} \quad \sum_{i=1}^{n} \Big( C_i - \big(A\,e^{-\alpha t_i} - A\,e^{-\beta t_i}\big) \Big)^2
-> ```
->
-> A estrutura é idêntica à do exemplo da cerveja: soma dos quadrados dos
-> resíduos entre o dado observado ($C_i$) e o modelo teórico avaliado em
-> $t_i$. A única diferença é a forma funcional do modelo — aqui, uma
-> combinação de duas exponenciais em vez de uma logística. Isso reforça que
-> o "molde" de mínimos quadrados não-lineares se aplica a qualquer modelo
-> paramétrico não-linear, bastando trocar a expressão dentro do somatório.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -394,9 +327,9 @@ PlutoUI = "~0.7.75"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.12.6"
+julia_version = "1.12.2"
 manifest_format = "2.0"
-project_hash = "6202c46cd5a5938f8dba2b60dca6a8f77e5b3deb"
+project_hash = "9da25c342174554885fb92007d1f13b24b604981"
 
 [[deps.ASL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1025,7 +958,7 @@ version = "1.11.0"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2025.11.4"
+version = "2025.5.20"
 
 [[deps.MutableArithmetics]]
 deps = ["LinearAlgebra", "SparseArrays", "Test"]
@@ -1119,7 +1052,7 @@ version = "0.44.2+0"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "Random", "SHA", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.12.1"
+version = "1.12.0"
 weakdeps = ["REPL"]
 
     [deps.Pkg.extensions]
@@ -1724,13 +1657,9 @@ version = "1.9.2+0"
 # ╟─1f38f75d-54d4-4636-947c-bd09a15c33da
 # ╟─544a80c0-0337-4228-b1c3-03116969dc22
 # ╟─d1288104-de40-4e20-a1fc-954c6ebc105c
-# ╟─4b3d1860-774b-410b-a0af-5445a6da8491
 # ╟─cef56bc3-8e5e-43a9-9565-7669e4853dea
 # ╠═da22100e-0a9a-4f59-93de-482160ba29f3
-# ╟─d2d87f87-e116-4b2f-aeca-79245c2a41c1
 # ╟─03f5d2cf-1f7b-4525-bb71-935b377daa26
-# ╟─6dd8b600-7b83-4c13-bfc1-3420d3cae94c
 # ╟─c4edce84-47d7-44cb-9dd8-229ec47f75f0
-# ╟─33e93c36-e4f3-439b-94e7-6c21e96fc76e
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
