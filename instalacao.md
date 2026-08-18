@@ -25,7 +25,7 @@ Para instalar Pluto, nós vamos rodar o _ambiente de gerenciador de pacotes_. Pa
 ```julia
 julia> ]
 
-(@v1.11) pkg>
+(@v1.12) pkg>
 ```
 
 A linha se torna azul e o prompt muda para `pkg>`, dizendo que você está no modo _gerenciador de pacotes_. Este modo permite que você faça operações com pacotes (**packages** em inglês também chamados bibliotecas).
@@ -33,7 +33,7 @@ A linha se torna azul e o prompt muda para `pkg>`, dizendo que você está no mo
 Para instalar o Pluto, rode os seguinte (_case sensitive_)  comandos para *add* (instalar) o pacote ao seu sistema, baixando-o da internet. Você só precisará fazer isso uma única vez para cada instalação do Julia:
 
 ```julia
-(@v1.11) pkg> add Pluto
+(@v1.12) pkg> add Pluto
 ```
 
 Isto pode demorar um pouco, então vá tomar um cafézinho!
