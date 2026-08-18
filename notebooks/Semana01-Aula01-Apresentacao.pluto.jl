@@ -47,11 +47,11 @@ md"## Ementa de MAT4642 - Introdução à Matemática Computacional
 md"""
 ## Avaliação
 
-- Serão realizadas duas avaliações individuais, ``A_1`` e ``A_2``.
-- Serão realizadas também avaliações parciais ``T_i``, ``i = 1, \ldots, n``, na forma de entrega de exercícios e trabalhos computacionais, com ``6 \leq n \leq 12`` (mínimo de duas por unidade), cuja média será ``T = \frac{1}{n}\sum_{i=1}^n T_i``.
+- Será realizada uma avaliação escrita ``E``.
+- Serão realizadas também tarefas semanais ``T_i``, ``i = 1, \ldots, n``, na forma de entrega de exercícios e trabalhos computacionais.
 
-- A média parcial ``MP`` será dada por
-$$MP = \frac{3T + 3A_1 + 3A_2}{9}.$$
+- Todas as avaliações têm o mesmo peso: a média parcial ``MP`` será dada por
+$$MP = \frac{E + T_1 + T_2 + \cdots + T_n}{n+1}.$$
 
 - A Média Final ``MF`` será dada por
 $$MF = \begin{cases} 0, & \text{se frequência} < 75\%, \\ MP, & \text{se } MP \leq 2{,}5 \text{ ou } MP \geq 6{,}0, \\ \max\{MP, R\}, & \text{se } 3{,}0 \leq MP \leq 5{,}5, \end{cases}$$
