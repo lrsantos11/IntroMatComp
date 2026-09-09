@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v1.0.3
+# v0.20.27
 
 using Markdown
 using InteractiveUtils
@@ -167,25 +167,15 @@ HTML("""
 <p><strong>Precisão dupla (<code>Float64</code>, 64 bits):</strong></p>
 <div style="display:flex; width:100%; height:44px; font-family:monospace; font-size:0.85em; color:white; text-align:center; border:1px solid #333;">
   <div style="flex:1 1 1.6%; background:#2e6da4; display:flex; align-items:center; justify-content:center;">S</div>
-  <div style="flex:1 1 17.2%; background:#c0392b; display:flex; align-items:center; justify-content:center;">exp (11 bits)</div>
-  <div style="flex:1 1 81.2%; background:#2e8b57; display:flex; align-items:center; justify-content:center;">mantissa  (52 bits)</div>
-</div>
-<div style="display:flex; width:100%; font-family:monospace; font-size:0.72em; color:#888; text-align:center;">
-  <div style="flex:1 1 1.6%;">63</div>
-  <div style="flex:1 1 17.2%;">62–52</div>
-  <div style="flex:1 1 81.2%;">51–0</div>
+  <div style="flex:1 1 17.2%; background:#c0392b; display:flex; align-items:center; justify-content:center;">expoente (11 bits)</div>
+  <div style="flex:1 1 81.2%; background:#2e8b57; display:flex; align-items:center; justify-content:center;">mantissa / fração (52 bits)</div>
 </div>
 
 <p style="margin-top:14px;"><strong>Precisão simples (<code>Float32</code>, 32 bits):</strong></p>
 <div style="display:flex; width:100%; height:44px; font-family:monospace; font-size:0.85em; color:white; text-align:center; border:1px solid #333;">
-  <div style="flex:1 1 3.1%; background:#2e6da4; display:flex; align-items:center; justify-content:center;">S</div>
+  <div style="flex:1 1 3.1%; background:#2e6da4; display:flex; align-items:center; justify-content:center;"></div>
   <div style="flex:1 1 25%; background:#c0392b; display:flex; align-items:center; justify-content:center;">exp (8 bits)</div>
   <div style="flex:1 1 71.9%; background:#2e8b57; display:flex; align-items:center; justify-content:center;">mantissa (23 bits)</div>
-</div>
-<div style="display:flex; width:100%; font-family:monospace; font-size:0.72em; color:#888; text-align:center;">
-  <div style="flex:1 1 3.1%;">31</div>
-  <div style="flex:1 1 25%;">30–23</div>
-  <div style="flex:1 1 71.9%;">22–0</div>
 </div>
 
 <p style="font-size:0.8em; color:#666; margin-top:8px;">🟦 sinal &nbsp; 🟥 expoente &nbsp; 🟩 mantissa/fração — adaptado de Ascher &amp; Greif, <em>A First Course in Numerical Methods</em>, Fig. 2.1</p>
@@ -377,6 +367,39 @@ begin
 	ylabel!("Dígitos corretos")
 	xlabel!("x")
 	plt2
+end
+
+# ╔═╡ 8905423c-41f2-4b2e-8af0-985c4f19da41
+
+md"""
+### 📝 Tente você: outro caso de cancelamento
+
+Considere $f(x) = \sqrt{x+1} - \sqrt{x}$ para $x$ grande — ela sofre do mesmo problema. Multiplique e divida pelo conjugado (como fizemos acima) e implemente a versão sem cancelamento em `f_melhorado`.
+"""
+
+# ╔═╡ a30b4134-9e30-40d5-b6ec-3fc997830f3d
+
+f_direto(x) = sqrt(x + 1) - sqrt(x)   # versão ingênua, sofre de cancelamento para x grande
+
+# ╔═╡ abb1e81e-ee1b-44c1-8928-ba19285a1dff
+
+function f_melhorado(x)
+    # IMPLEMENTE AQUI
+    # Dica: (√(x+1) - √x)(√(x+1) + √x) = (x+1) - x = 1
+
+    return missing
+end
+
+# ╔═╡ 0cd6968a-1a8e-4ac9-959e-efcd38feb658
+
+let
+    x_teste = 1f8
+    exato = Float64(sqrt(BigFloat(x_teste) + 1) - sqrt(BigFloat(x_teste)))
+    erro_direto = Eᵣ(exato, f_direto(x_teste))
+    erro_melhorado = Eᵣ(exato, f_melhorado(x_teste))
+    erro_melhorado < erro_direto ?
+        "✅ Versão melhorada é mais precisa! (erro direto: $erro_direto, melhorado: $erro_melhorado)" :
+        "❌ Confira sua implementação (erro direto: $erro_direto, melhorado: $erro_melhorado)"
 end
 
 # ╔═╡ bbbb0001-0000-4000-8000-000000000001
@@ -1605,7 +1628,7 @@ version = "1.13.0+0"
 # ╟─3f506b17-8ac5-4fc3-a502-c5eea24f9748
 # ╟─f2ed6b44-a464-4b5f-acf4-dd8309aaa8e4
 # ╟─9a63e356-911c-478a-ab08-34d3a163ce07
-# ╟─dd348719-07c9-47b0-8210-4325c5622a25
+# ╠═dd348719-07c9-47b0-8210-4325c5622a25
 # ╠═bc3ef026-3c2a-484d-b0ca-a08740c66cd6
 # ╠═292b079c-3adc-4a7a-9966-ff2a368afa96
 # ╠═6bd08fe7-2bcd-4e85-b883-5c8ab4ed44c8
@@ -1631,6 +1654,10 @@ version = "1.13.0+0"
 # ╠═a1bfe989-45e6-4d9b-8eb2-eb2f33947bb6
 # ╠═fb7dcb96-d70b-4df5-bb51-89af50a8eb30
 # ╠═6892c590-2150-486d-812b-1390eb47fbdb
+# ╟─8905423c-41f2-4b2e-8af0-985c4f19da41
+# ╠═a30b4134-9e30-40d5-b6ec-3fc997830f3d
+# ╠═abb1e81e-ee1b-44c1-8928-ba19285a1dff
+# ╠═0cd6968a-1a8e-4ac9-959e-efcd38feb658
 # ╟─bbbb0001-0000-4000-8000-000000000001
 # ╟─bbbb0002-0000-4000-8000-000000000002
 # ╟─ef58eb32-43ea-4d53-8d5b-91233e2ec7a3
