@@ -160,27 +160,25 @@ o próprio 1! Vamos normalmente denotar os resultados calculados pelo computador
 
 # ╔═╡ dd348719-07c9-47b0-8210-4325c5622a25
 
-md"""
-##### Figura: layout dos bits no padrão IEEE 754
+HTML("""
+<h5>Figura: layout dos bits no padrão IEEE 754</h5>
 
-**Precisão dupla (`Float64`, 64 bits):**
-
+<p><strong>Precisão dupla (<code>Float64</code>, 64 bits):</strong></p>
 <div style="display:flex; width:100%; height:44px; font-family:monospace; font-size:0.85em; color:white; text-align:center; border:1px solid #333;">
   <div style="flex:1 1 1.6%; background:#2e6da4; display:flex; align-items:center; justify-content:center;">S</div>
   <div style="flex:1 1 17.2%; background:#c0392b; display:flex; align-items:center; justify-content:center;">expoente (11 bits)</div>
   <div style="flex:1 1 81.2%; background:#2e8b57; display:flex; align-items:center; justify-content:center;">mantissa / fração (52 bits)</div>
 </div>
 
-**Precisão simples (`Float32`, 32 bits):**
-
-<div style="display:flex; width:100%; height:44px; font-family:monospace; font-size:0.85em; color:white; text-align:center; border:1px solid #333; margin-top:6px;">
+<p style="margin-top:14px;"><strong>Precisão simples (<code>Float32</code>, 32 bits):</strong></p>
+<div style="display:flex; width:100%; height:44px; font-family:monospace; font-size:0.85em; color:white; text-align:center; border:1px solid #333;">
   <div style="flex:1 1 3.1%; background:#2e6da4; display:flex; align-items:center; justify-content:center;"></div>
   <div style="flex:1 1 25%; background:#c0392b; display:flex; align-items:center; justify-content:center;">exp (8 bits)</div>
   <div style="flex:1 1 71.9%; background:#2e8b57; display:flex; align-items:center; justify-content:center;">mantissa (23 bits)</div>
 </div>
 
-<span style="font-size:0.8em; color:#666;">🟦 sinal &nbsp; 🟥 expoente &nbsp; 🟩 mantissa/fração — adaptado de Ascher &amp; Greif, *A First Course in Numerical Methods*, Fig. 2.1</span>
-"""
+<p style="font-size:0.8em; color:#666; margin-top:8px;">🟦 sinal &nbsp; 🟥 expoente &nbsp; 🟩 mantissa/fração — adaptado de Ascher &amp; Greif, <em>A First Course in Numerical Methods</em>, Fig. 2.1</p>
+""")
 
 
 # ╔═╡ bc3ef026-3c2a-484d-b0ca-a08740c66cd6
