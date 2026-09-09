@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.27
+# v1.0.3
 
 using Markdown
 using InteractiveUtils
@@ -158,6 +158,7 @@ o próprio 1! Vamos normalmente denotar os resultados calculados pelo computador
 ```
 """
 
+
 # ╔═╡ dd348719-07c9-47b0-8210-4325c5622a25
 
 HTML("""
@@ -179,7 +180,6 @@ HTML("""
 
 <p style="font-size:0.8em; color:#666; margin-top:8px;">🟦 sinal &nbsp; 🟥 expoente &nbsp; 🟩 mantissa/fração — adaptado de Ascher &amp; Greif, <em>A First Course in Numerical Methods</em>, Fig. 2.1</p>
 """)
-
 
 # ╔═╡ bc3ef026-3c2a-484d-b0ca-a08740c66cd6
 
@@ -1595,7 +1595,7 @@ version = "1.13.0+0"
 # ╟─3f506b17-8ac5-4fc3-a502-c5eea24f9748
 # ╟─f2ed6b44-a464-4b5f-acf4-dd8309aaa8e4
 # ╟─9a63e356-911c-478a-ab08-34d3a163ce07
-# ╟─dd348719-07c9-47b0-8210-4325c5622a25
+# ╠═dd348719-07c9-47b0-8210-4325c5622a25
 # ╠═bc3ef026-3c2a-484d-b0ca-a08740c66cd6
 # ╠═292b079c-3adc-4a7a-9966-ff2a368afa96
 # ╠═6bd08fe7-2bcd-4e85-b883-5c8ab4ed44c8
