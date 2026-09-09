@@ -155,6 +155,34 @@ md"""
 	O erro *absoluto* cresce com $n$, mas o erro *relativo* decresce — Stirling fica **proporcionalmente** mais preciso para $n$ grande.
 """
 
+# ╔═╡ a5cf4e91-a917-43cf-b549-dd7567a589e4
+
+md"""
+### 📝 Tente você: Stirling melhorado
+
+A aproximação de Stirling pode ser refinada com um fator de correção:
+```math
+S_n^* = S_n\left(1 + \frac{1}{12n}\right)
+```
+Implemente `Sₙ_melhorado(n)` (reaproveitando `Sₙ` já definida acima) e verifique que ela é mais precisa que `Sₙ` para $n = 1, \ldots, 20$.
+"""
+
+# ╔═╡ f341326f-2280-4a5e-8067-aac7759641ff
+
+function Sₙ_melhorado(n)
+    # IMPLEMENTE AQUI
+    # Dica: use Sₙ(n) já definida acima, multiplicando pelo fator de correção (1 + 1/(12n))
+
+    return missing
+end
+
+# ╔═╡ 8e24733d-6a4e-4a43-aec3-0a68da36dc75
+
+let
+    testes = [Eᵣ(factorial(n), Sₙ_melhorado(n)) < Eᵣ(factorial(n), Sₙ(n)) for n in 1:20]
+    all(testes) ? "✅ Sₙ_melhorado é mais precisa que Sₙ para todo n de 1 a 20!" : "❌ Confira sua implementação: $testes"
+end
+
 # ╔═╡ c3a16d30-bcaa-4db2-b392-abd88d31d60b
 
 md"""
@@ -200,6 +228,35 @@ md"""
 	
     A cada passo, o erro de arredondamento da iteração anterior é **multiplicado por -10**. Deixamos a derivação da solução estável (a recorrência regressiva) como exercício prático!
 """
+
+# ╔═╡ dcc679fc-24aa-4215-8a44-7da8443b3087
+
+md"""
+### 📝 Tente você: a recorrência regressiva (estável)
+
+Invertendo a recorrência progressiva obtemos a versão **regressiva**:
+```math
+y_{n-1} = \frac{1}{10n} - \frac{y_n}{10}
+```
+Nessa direção o erro é **dividido por 10** a cada passo (em vez de multiplicado), então ela se auto-corrige. Comece de um $n_1$ grande (ex.: $n_1 = 40$) com um chute inicial ruim $y_{n_1} = 0$ e ande para trás até $n_{alvo}$. Implemente `seq_regressiva(n1, n_alvo)` e confira que o resultado fica em $(0, 1)$, como esperado.
+"""
+
+# ╔═╡ 0c847f15-626c-47da-846e-ca8c20913387
+
+function seq_regressiva(n1, n_alvo)
+    # IMPLEMENTE AQUI
+    # Dica: comece com y = 0.0 em n = n1 (chute ruim, mas a recorrência se auto-corrige)
+    # e ande para trás até n_alvo usando y_{n-1} = 1/(10n) - y_n/10
+
+    return missing
+end
+
+# ╔═╡ 96f53454-f1f2-4041-a66b-cd86c4362741
+
+let
+    y20 = seq_regressiva(40, 20)
+    (0 < y20 < 1) ? "✅ y₂₀ = $y20 está no intervalo esperado (0, 1)!" : "❌ y₂₀ = $y20 está fora do esperado — confira a implementação"
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -620,10 +677,16 @@ version = "1.64.0+1"
 # ╠═fa000034-0000-4000-8000-000000000034
 # ╠═fa000035-0000-4000-8000-000000000035
 # ╟─fa000036-0000-4000-8000-000000000036
+# ╟─a5cf4e91-a917-43cf-b549-dd7567a589e4
+# ╠═f341326f-2280-4a5e-8067-aac7759641ff
+# ╠═8e24733d-6a4e-4a43-aec3-0a68da36dc75
 # ╟─c3a16d30-bcaa-4db2-b392-abd88d31d60b
 # ╠═3407ef43-bb62-4c61-be42-42355a114560
 # ╠═aea0972c-e6a8-4dbc-a14c-03444360134e
 # ╠═34ceb838-b3fa-4139-9a8e-3f9e1f2fa3b4
 # ╟─4ae08607-3893-4aff-95bd-310acabf11b2
+# ╟─dcc679fc-24aa-4215-8a44-7da8443b3087
+# ╠═0c847f15-626c-47da-846e-ca8c20913387
+# ╠═96f53454-f1f2-4041-a66b-cd86c4362741
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
