@@ -58,15 +58,33 @@ md"""
 ## 1. Funções de Erro
 
 Usamos `norm` do `LinearAlgebra` para calcular normas (generaliza o valor absoluto para vetores).
+
+### 📝 Implemente você: erro absoluto e relativo
+
+Relembrando as definições:
+```math
+E_A = \lvert u - v \rvert \qquad E_R = \frac{\lvert u - v \rvert}{\lvert u \rvert}
+```
+Implemente `Eₐ(u, v)` e `Eᵣ(u, v)` abaixo (funcionam tanto para escalares quanto para vetores, usando `norm`).
 """
 
 # ╔═╡ fa000020-0000-4000-8000-000000000020
 
-Eₐ(u, v) = norm(u - v)              # erro absoluto
+function Eₐ(u, v)
+    # IMPLEMENTE AQUI
+    # Dica: use norm(u - v)
+
+    return missing
+end
 
 # ╔═╡ fa000021-0000-4000-8000-000000000021
 
-Eᵣ(u, v) = norm(u - v) / norm(u)   # erro relativo
+function Eᵣ(u, v)
+    # IMPLEMENTE AQUI
+    # Dica: use norm(u - v) / norm(u)
+
+    return missing
+end
 
 # ╔═╡ fa000022-0000-4000-8000-000000000022
 
@@ -677,7 +695,7 @@ version = "1.64.0+1"
 # ╠═fa000034-0000-4000-8000-000000000034
 # ╠═fa000035-0000-4000-8000-000000000035
 # ╟─fa000036-0000-4000-8000-000000000036
-# ╠═a5cf4e91-a917-43cf-b549-dd7567a589e4
+# ╟─a5cf4e91-a917-43cf-b549-dd7567a589e4
 # ╠═f341326f-2280-4a5e-8067-aac7759641ff
 # ╠═8e24733d-6a4e-4a43-aec3-0a68da36dc75
 # ╟─c3a16d30-bcaa-4db2-b392-abd88d31d60b
@@ -685,7 +703,7 @@ version = "1.64.0+1"
 # ╠═aea0972c-e6a8-4dbc-a14c-03444360134e
 # ╠═34ceb838-b3fa-4139-9a8e-3f9e1f2fa3b4
 # ╟─4ae08607-3893-4aff-95bd-310acabf11b2
-# ╠═dcc679fc-24aa-4215-8a44-7da8443b3087
+# ╟─dcc679fc-24aa-4215-8a44-7da8443b3087
 # ╠═0c847f15-626c-47da-846e-ca8c20913387
 # ╠═96f53454-f1f2-4041-a66b-cd86c4362741
 # ╟─00000000-0000-0000-0000-000000000001
