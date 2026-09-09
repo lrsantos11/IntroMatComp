@@ -170,12 +170,22 @@ HTML("""
   <div style="flex:1 1 17.2%; background:#c0392b; display:flex; align-items:center; justify-content:center;">expoente (11 bits)</div>
   <div style="flex:1 1 81.2%; background:#2e8b57; display:flex; align-items:center; justify-content:center;">mantissa / fração (52 bits)</div>
 </div>
+<div style="display:flex; width:100%; font-family:monospace; font-size:0.72em; color:#888; text-align:center;">
+  <div style="flex:1 1 1.6%;">63</div>
+  <div style="flex:1 1 17.2%;">62–52</div>
+  <div style="flex:1 1 81.2%;">51–0</div>
+</div>
 
 <p style="margin-top:14px;"><strong>Precisão simples (<code>Float32</code>, 32 bits):</strong></p>
 <div style="display:flex; width:100%; height:44px; font-family:monospace; font-size:0.85em; color:white; text-align:center; border:1px solid #333;">
-  <div style="flex:1 1 3.1%; background:#2e6da4; display:flex; align-items:center; justify-content:center;"></div>
+  <div style="flex:1 1 3.1%; background:#2e6da4; display:flex; align-items:center; justify-content:center;">S</div>
   <div style="flex:1 1 25%; background:#c0392b; display:flex; align-items:center; justify-content:center;">exp (8 bits)</div>
   <div style="flex:1 1 71.9%; background:#2e8b57; display:flex; align-items:center; justify-content:center;">mantissa (23 bits)</div>
+</div>
+<div style="display:flex; width:100%; font-family:monospace; font-size:0.72em; color:#888; text-align:center;">
+  <div style="flex:1 1 3.1%;">31</div>
+  <div style="flex:1 1 25%;">30–23</div>
+  <div style="flex:1 1 71.9%;">22–0</div>
 </div>
 
 <p style="font-size:0.8em; color:#666; margin-top:8px;">🟦 sinal &nbsp; 🟥 expoente &nbsp; 🟩 mantissa/fração — adaptado de Ascher &amp; Greif, <em>A First Course in Numerical Methods</em>, Fig. 2.1</p>
@@ -1595,7 +1605,7 @@ version = "1.13.0+0"
 # ╟─3f506b17-8ac5-4fc3-a502-c5eea24f9748
 # ╟─f2ed6b44-a464-4b5f-acf4-dd8309aaa8e4
 # ╟─9a63e356-911c-478a-ab08-34d3a163ce07
-# ╠═dd348719-07c9-47b0-8210-4325c5622a25
+# ╟─dd348719-07c9-47b0-8210-4325c5622a25
 # ╠═bc3ef026-3c2a-484d-b0ca-a08740c66cd6
 # ╠═292b079c-3adc-4a7a-9966-ff2a368afa96
 # ╠═6bd08fe7-2bcd-4e85-b883-5c8ab4ed44c8
