@@ -167,8 +167,8 @@ HTML("""
 <p><strong>Precisão dupla (<code>Float64</code>, 64 bits):</strong></p>
 <div style="display:flex; width:100%; height:44px; font-family:monospace; font-size:0.85em; color:white; text-align:center; border:1px solid #333;">
   <div style="flex:1 1 1.6%; background:#2e6da4; display:flex; align-items:center; justify-content:center;">S</div>
-  <div style="flex:1 1 17.2%; background:#c0392b; display:flex; align-items:center; justify-content:center;">expoente (11 bits)</div>
-  <div style="flex:1 1 81.2%; background:#2e8b57; display:flex; align-items:center; justify-content:center;">mantissa / fração (52 bits)</div>
+  <div style="flex:1 1 17.2%; background:#c0392b; display:flex; align-items:center; justify-content:center;">exp (11 bits)</div>
+  <div style="flex:1 1 81.2%; background:#2e8b57; display:flex; align-items:center; justify-content:center;">mantissa  (52 bits)</div>
 </div>
 <div style="display:flex; width:100%; font-family:monospace; font-size:0.72em; color:#888; text-align:center;">
   <div style="flex:1 1 1.6%;">63</div>
