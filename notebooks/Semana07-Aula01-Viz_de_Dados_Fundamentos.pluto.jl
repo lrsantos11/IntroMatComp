@@ -163,7 +163,7 @@ md"""
 ## Exercícios da Aula 01 — Fundamentos de Plots
 
 !!! exercise "Tarefa: Resolução Prática"
-    **Observação Importante:** Suba um Notebook Pluto com o nome _Tarefa_Aula01_Meu_Nome.pluto.jl_ no Moodle contendo a resolução apenas destes 4 exercícios práticos para fixar o aprendizado!
+    **Observação Importante:** Estes exercícios compõem a primeira parte da avaliação desta semana. Ao final da Aula 02, você deverá entregar todas as resoluções unificadas em um único arquivo chamado _Tarefa_Semana07_Meu_Nome.pluto.jl_ no Moodle.
 
 > **Exercício 1 — Gráficos de Múltiplas Funções:**
 > Crie um gráfico que compare as taxas de crescimento das funções $f(x) = x^2$ e $g(x) = x \log_2(x)$ no intervalo $[1, 10]$.
