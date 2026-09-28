@@ -49,19 +49,18 @@ md"""
 df_iris = dataset("datasets", "iris")
 
 # ╔═╡ 554b71cb-8b2e-4251-8720-4f30ecd1f437
-first(df_iris, 5) # Visualização inicial das 5 primeiras linhas do dataset.
+
 
 # ╔═╡ 9db9e1fd-6abc-4dd7-969b-9276f658ffa2
-last(df_iris, 10) # Visualização inicial das 10 úiltimas linhas do dataset.
+
 
 # ╔═╡ c64c8299-040e-44b5-9636-a7a519d78d58
-size(df_iris) # Tamanho da tabela
+
 
 # ╔═╡ 3577e38f-f87c-41dc-a542-83f66656db14
-names(df_iris) # Nomes das colunas
+
 
 # ╔═╡ ad38731f-f827-400c-877f-ff4a2b1b6866
-df_iris.Species #Acessar uma coluna usando ."NomeColuna"
 
 
 # ╔═╡ 10000000-0000-0000-0000-000000000001
@@ -71,7 +70,6 @@ Note que a sintaxe `df_iris.Species` (acesso por propriedade) faz exatamente a m
 """
 
 # ╔═╡ 6e6c3dea-626c-4b8f-be3d-23eecc3b0c4e
-unique(df_iris.Species) # Quais valores  categoricos  na coluna
 
 
 # ╔═╡ 20000000-0000-0000-0000-000000000001
@@ -80,13 +78,12 @@ Para saber **quantas** observações existem em cada categoria, usamos a funçã
 """
 
 # ╔═╡ 20000000-0000-0000-0000-000000000002
-countmap(df_iris.Species)
+
 
 # ╔═╡ e348870b-6216-4628-adb1-b22c7dea94a6
-df_iris.SepalLength
+
 
 # ╔═╡ 5b3ab241-94c3-4b55-819e-f1fe717d9dfa
-ismissing.(df_iris.SepalLength)
 
 
 # ╔═╡ 10000000-0000-0000-0000-000000000002
@@ -97,17 +94,16 @@ E se existirem dados faltantes? Na vida real, a Análise Exploratória serve jus
 """
 
 # ╔═╡ 10000000-0000-0000-0000-000000000003
-df_limpo = dropmissing(df_iris)
+
 
 # ╔═╡ 3db71c3b-556f-46ce-b59d-211753402b64
-# using StatsBase, Statistics
-summarystats(df_iris.SepalLength) # Resumo estatístico de dados numéricos
+
 
 # ╔═╡ 8b87ede3-f8a5-46dc-b3de-a4dda77bb866
-summarystats(rand(200))
+
 
 # ╔═╡ 545a268b-3f7e-4e27-9456-8729255c38a3
-describe(df_iris.PetalWidth)
+
 
 # ╔═╡ 6019fe99-f64d-4b61-9a67-531f1fce0172
 md"""
@@ -126,7 +122,7 @@ Tudo o que vimos numericamente com o `summarystats` e o agrupamento pode ser per
 """
 
 # ╔═╡ 10000000-0000-0000-0000-000000000005
-@df df_iris boxplot(:Species, :PetalLength, title="Distribuição do Tamanho da Pétala", legend=false, fillalpha=0.6)
+
 
 # ╔═╡ 9cfb496c-b8d5-4577-bcd7-5aa1e5ad7bb8
 md"""
@@ -134,9 +130,7 @@ md"""
 """
 
 # ╔═╡ a0c57bc7-47b0-4b86-b717-4cca5f699115
-# Calculando a correlação de Pearson entre duas variáveis numéricas, e depois descrevendo uma das colunas
 
-correlacao = cor(df_iris.PetalWidth, df_iris.PetalLength)
 
 # ╔═╡ f57282cf-629a-4f1a-81cd-aa253e9b4c2f
 md"""
@@ -145,7 +139,7 @@ md"""
 """
 
 # ╔═╡ 17d07ff1-9ac3-4c3d-9a61-0b9187786886
-df_iris.soma_col = df_iris.SepalWidth + df_iris.SepalLength
+
 
 # ╔═╡ f3af717b-f63d-411e-9f0a-c048de6ba9a7
 md"""
@@ -155,7 +149,7 @@ Caso queira adicionar uma nova coluna ao seu dataset, por exemplo, comparar a so
 """
 
 # ╔═╡ 3334d0ca-c15a-4105-a706-596bdeecd264
-df_iris
+
 
 # ╔═╡ 49aadd5f-edde-4a44-8bd9-ff3ca3a9dbb1
 md"""
@@ -164,16 +158,13 @@ md"""
 """
 
 # ╔═╡ 48f1fd9c-2b8e-465e-8c4b-c3bdf7beee13
-# Agora vejamos como filtrar valores no nosso dataset
-df_versicolor = filter(linha -> linha.Species == "versicolor", df_iris)
+
 
 # ╔═╡ cab74c9f-9453-426a-94ec-987d84ed5941
-# Filtrando apenas as flores cujo tamanho (Lenght) da sépala mede mais do que 7cm
-df_flores_grandes = filter(linha -> linha.SepalLength > 7, df_iris)
+
 
 # ╔═╡ 48e0d579-bab4-461c-9a81-9f3dd4f21301
-# Acessando Dados
-df_iris[1:10, [:SepalLength, :PetalLength, :Species]]
+
 
 # ╔═╡ 0ae94b13-aaf8-4d1b-81a3-6224ea195e17
 md"""
@@ -181,10 +172,10 @@ Para filtrar nossos dados, podemos usar a função `filter()`, no formato `filte
 """
 
 # ╔═╡ 30f870c6-d53e-4c7e-8b1a-3a1714f6aebb
-df_iris.SepalLength .> 7
+
 
 # ╔═╡ 1fbcdb43-de95-430d-b5bb-f917bc411836
-df_flores_grandes1 = df_iris[df_iris.SepalLength.>7, :]
+
 
 # ╔═╡ 0291fa8a-695b-4445-a7b2-889fb792584b
 md"""
@@ -193,8 +184,7 @@ md"""
 """
 
 # ╔═╡ ef23c951-fc9c-4605-8e3b-c6e0e2153005
-# select(df_iris,[:SepalLength,  :Species])
-df_iris[:, [:SepalLength, :Species]]
+
 
 # ╔═╡ 71e76af3-0138-483c-8aa5-84d71d9d4c09
 md"""
@@ -203,24 +193,22 @@ Dataframes agrupados por _Species_.
 """
 
 # ╔═╡ e31add8a-d1b8-4aba-80ae-f0859a4468e3
-grupo = groupby(df_iris, :Species)
+
 
 # ╔═╡ fa366c42-daa1-438e-8a3d-544e08fed7d4
-grupo[1]
+
 
 # ╔═╡ a7cb8a50-eb33-4def-a583-95d74973c39d
-grupo[2]
+
 
 # ╔═╡ e5e14133-0998-4334-96ff-3e049118f222
-grupo[3]
+
 
 # ╔═╡ 62b3b420-be59-44f5-9b28-6ff698e42cc2
-#Graficar a dispersão de largura e Comprimento de petala
-scatter(df_iris.PetalLength, df_iris.PetalWidth, title="Largura x Comprimento Petala", xlabel="Largura", ylabel="Comprimento", leg=false)
+
 
 # ╔═╡ eed424bd-b21a-47d5-872b-4bb0e7f83021
-# Usando StatsPlots com DataFarmes
-@df df_iris scatter(:PetalLength, :PetalWidth, title="Largura x Comprimento Petala", xlabel="Largura", ylabel="Comprimento", leg=false)
+
 
 # ╔═╡ 998457b0-4259-4814-815f-799ef9fe0a9b
 md"""
@@ -236,33 +224,19 @@ md"""
 
 
 # ╔═╡ 69bc10b9-aabd-409d-9bef-20d1e875b4f6
-grupo.keymap
+
 
 # ╔═╡ 8b8aa946-cc32-4c5e-bcce-880a95c01873
-begin
-    plt = plot(title="Largura x Comprimento Petala", xlabel="Largura", ylabel="Comprimento")
-    for df in grupo
-        @df df scatter!(:PetalLength, :PetalWidth)
-    end
-    plt
-end
+
 
 # ╔═╡ 2e597f96-32d9-45cb-8e3e-1cef5055992d
-# Alternativa para o gráfico acima
-@df df_iris scatter(:PetalLength, :PetalWidth, title="Largura x Comprimento Petala", xlabel="Largura", ylabel="Comprimento",
-    group=:Species,
-    m=[:hex :star7 :diamond])
+
 
 # ╔═╡ 5696662e-5934-4674-9f46-debb410c1d31
-# Calculando média de largura da Sepala  por media (combinado dados por grupo)
-media_grupo = combine(grupo, :SepalWidth => mean => :MediaSepala)
+
 
 # ╔═╡ e7722d2b-9265-42af-9cc4-fab81c679715
-@df media_grupo bar(:Species, :MediaSepala,
-    xlabel="Espécie",
-    ylabel="Média da Sepala",
-    title="Média da largura da Sepala, por espécie",
-    leg=false)
+
 
 # ╔═╡ 7cd09677-f5d2-45d1-896b-2ae0b2eaa981
 md"""
@@ -272,26 +246,21 @@ md"""
 """
 
 # ╔═╡ 31ed8f19-ea46-449b-a262-0675c1733197
-mediana_grupo = combine(grupo, :PetalWidth => median => :MedianaLargura, :PetalLength => median => :MedianaComprimento)
+
 
 # ╔═╡ 98823cc5-30d3-473a-b7c2-3a684948c7ff
-@df mediana_grupo groupedbar(:Species, [:MedianaComprimento :MedianaLargura],
-    xlabel="Espécie",
-    ylabel="Mediana da Pétala",
-    title="Mediana da largura e comprimento da Pétala, por espécie")
+
 
 # ╔═╡ f2157cd6-de76-498a-bd01-05e52b7a655f
-RDatasets.datasets()
+
 
 # ╔═╡ d81632a2-282c-4f3f-99a0-56c963cc43ce
-df_titanic = Titanic(; as_df = true)
+
 
 # ╔═╡ 85b4ed7a-e317-4247-adf3-bfeec9ffdf0d
-neuro = dataset("datasets", "Titanic")
+
 
 # ╔═╡ 60aa3e76-3e7e-427a-b9df-9b4dc021d7a8
-titanic = dataset("datasets", "Titanic")
-
 
 
 # ╔═╡ 10000000-0000-0000-0000-000000000006
