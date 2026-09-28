@@ -40,36 +40,36 @@ df_metrosp = CSV.read("metro_sp.csv", DataFrame)
 first(df_metrosp, 5)
 
 # ╔═╡ 92add381-f477-44b4-ab76-1cc1de73c124
-df_metrosp[5,3]
+df_metrosp[5, 3]
 
 # ╔═╡ f1e768ce-7f30-4938-92ae-512cd3fdcb0e
-df_metrosp[:,3]
+df_metrosp[:, 3]
 
 # ╔═╡ c37e5be4-3298-4c68-8d79-fe40af93775e
-df_metrosp[:,"station"]
+df_metrosp[:, "station"]
 
 # ╔═╡ 1bd2f9fb-75bc-4f17-80ec-fd99e346d819
-df_metrosp[:,["lat", "lon", "name"]]
+df_metrosp[:, ["lat", "lon", "name"]]
 
 # ╔═╡ 9824defe-f917-4ae4-be15-caf58a6d0461
 names(df_metrosp)
 
 # ╔═╡ 8b4a2a02-dcb9-4e6f-a060-b3fe0cf290a3
-sort(df_metrosp,"line")
+sort(df_metrosp, "line")
 
 # ╔═╡ efe04ccd-262e-42a0-8439-1be98f77f459
 df_metrosp
 
 # ╔═╡ 09382bc7-ed6a-498f-903d-7652559d65e7
 let
-	sort!(df_metrosp,["line", "lon"])
-	lat = df_metrosp[:,"lat"]
-	lon = df_metrosp[:,"lon"]
-	
-	scatter(lat, lon, label = "Estações", title = "Estações de metro de São Paulo", xlabel = "Latitude", ylabel = "Longitude", 
-			aspect_ratio = :equal
-		   )
-	plot!(lat,lon, label = "Linhas")
+    sort!(df_metrosp, ["line", "lon"])
+    lat = df_metrosp[:, "lat"]
+    lon = df_metrosp[:, "lon"]
+
+    scatter(lat, lon, label="Estações", title="Estações de metro de São Paulo", xlabel="Latitude", ylabel="Longitude",
+        aspect_ratio=:equal
+    )
+    plot!(lat, lon, label="Linhas")
 end
 
 # ╔═╡ 20000000-0000-0000-0000-000000000006
@@ -83,11 +83,11 @@ let
     # Gráfico direto das colunas do DataFrame, colorido pela categoria `:linha`
     @df df_metrosp scatter(
         :lon, :lat, #Usar as colunas como Symbol ao invés de String
-        title = "Estações de metrô de São Paulo por Linha", 
-        aspect_ratio = :equal, 
-        group = :line,
-        leg = :outertopright,
-        markersize = 6
+        title="Estações de metrô de São Paulo por Linha",
+        aspect_ratio=:equal,
+        group=:line,
+        leg=:outertopright,
+        markersize=6
     )
 end
 
@@ -113,14 +113,14 @@ let
     # Conta quantas estações existem em cada linha
     df_resumo = combine(groupby(df_metrosp, :line), nrow => :total_estacoes)
     #ordenar
-    sort!(df_resumo,  :total_estacoes, rev=true) #rev => ordem reversa
+    sort!(df_resumo, :total_estacoes, rev=true) #rev => ordem reversa
     # Plota os resultados em um gráfico de barras
     @df df_resumo bar(
-        :line, :total_estacoes, 
-        legend = false, 
-        title = "Número de Estações por Linha", 
-        rotation = 45,
-        color = :teal
+        :line, :total_estacoes,
+        legend=false,
+        title="Número de Estações por Linha",
+        rotation=45,
+        color=:teal
     )
 end
 
