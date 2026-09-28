@@ -73,6 +73,15 @@ Note que a sintaxe `df_iris.Species` (acesso por propriedade) faz exatamente a m
 # ╔═╡ 6e6c3dea-626c-4b8f-be3d-23eecc3b0c4e
 unique(df_iris.Species) # Quais valores  categoricos  na coluna
 
+
+# ╔═╡ 20000000-0000-0000-0000-000000000001
+md"""
+Para saber **quantas** observações existem em cada categoria, usamos a função `countmap` do pacote `StatsBase`:
+"""
+
+# ╔═╡ 20000000-0000-0000-0000-000000000002
+countmap(df_iris.Species)
+
 # ╔═╡ e348870b-6216-4628-adb1-b22c7dea94a6
 df_iris.SepalLength
 
@@ -2584,6 +2593,8 @@ version = "1.9.2+0"
 # ╠═ad38731f-f827-400c-877f-ff4a2b1b6866
 # ╟─10000000-0000-0000-0000-000000000001
 # ╠═6e6c3dea-626c-4b8f-be3d-23eecc3b0c4e
+# ╟─20000000-0000-0000-0000-000000000001
+# ╠═20000000-0000-0000-0000-000000000002
 # ╠═e348870b-6216-4628-adb1-b22c7dea94a6
 # ╠═5b3ab241-94c3-4b55-819e-f1fe717d9dfa
 # ╟─10000000-0000-0000-0000-000000000002
