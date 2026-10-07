@@ -29,13 +29,13 @@ md"""
 """
 
 # ╔═╡ b6e88b48-e409-45fd-926f-e93276abd601
-# Função para simular lançamento de dados
-# function jogar_dados(num_tentativas; lados=6)
-
+# Função geradora de lançamentos de dados
+function jogar_dados(num_tentativas; lados=6)
+    # rand(1:lados, num_tentativas)
+end
 
 # ╔═╡ 199f9de6-d0f8-4930-99a0-fe836571029a
-# Teste: jogar 10 dados
-
+# Teste: simule o lançamento de 10 dados independentes
 
 # ╔═╡ ee5dbfee-5aeb-4f4d-b8ea-6650a6adb0a5
 md"""
@@ -50,33 +50,35 @@ md"""
 """
 
 # ╔═╡ b55d7055-b86d-495c-bb38-4a6d2e2f7868
-# Criação de matriz por compreensão de listas (comprehension) vs laço for
-
+let
+    # Comparativo: construção de matriz com list comprehension vs laço for
+    n = 10
+    # A = Float64[i + j for i in 1:n, j in 1:n]
+end
 
 # ╔═╡ ea6091f0-a545-43c3-b159-eb0f6dda628b
 
 
-
 # ╔═╡ ebb5f1a1-47ab-4041-866b-52693787341e
-# Amostras independentes para múltiplos dados
-
+# Construa uma lista de 10 jogadas usando compreensão de listas: [jogar_dados(10) for _ in 1:10]
 
 # ╔═╡ ee61ebcd-7b60-44b3-85eb-2cfd9f5b683e
-# Soma das jogadas
-
+# Calcule a soma elemento a elemento do vetor de jogadas com sum(jogadas_dados)
 
 # ╔═╡ 7de896f0-9e06-4611-92a9-3dc34c2a6df9
-# Simula a soma de dados e plota histograma da soma (Teorema Central do Limite)
-# function simula_soma_dados(num_dados, num_tentativas)
-
+# Ilustração do Teorema Central do Limite (TCL): a soma de variáveis independentes converge para a Normal
+function simula_soma_dados(num_dados, num_tentativas)
+    # 1. Gere a matriz de jogadas com compreensão: [jogar_dados(num_tentativas) for _ in 1:num_dados]
+    # 2. Some os dados por rodada: soma_dados = sum(jogadas_dados)
+    # 3. Calcule mean(soma_dados) e std(soma_dados)
+    # 4. Plote histogram(soma_dados, title="Lançamento de $(num_dados) dados", xlabel="Soma", ylabel="Frequência")
+end
 
 # ╔═╡ 7231d5c7-c008-4837-8c54-24cc2d75ba37
-# Teste da soma de 2 dados (1.000 tentativas)
-
+# Teste a simulação com 2 dados e 1.000 repetições (formato triangular)
 
 # ╔═╡ 7b4ccf6c-5eb7-4e9d-bc77-35766c7fe080
-# Teste da soma de 10 dados (100.000 tentativas)
-
+# Teste a simulação com 10 dados e 100.000 repetições (observe a curva em sino gaussiana emergindo!)
 
 # ╔═╡ dee98a52-87c7-4470-ae6e-f89a338efa46
 md"""
@@ -87,12 +89,20 @@ Muitos problemas em matemática e ciência são complexos demais para resolver c
 Como primeiro exemplo, vamos considerar uma pergunta simples: em média, quantas vezes é preciso lançar um dado padrão até sair um 6? Podemos simular esse experimento milhares de vezes e encontrar a média."""
 
 # ╔═╡ 54cb725a-1da7-4c78-8403-ce8db17ebabe
-# Simulação com laço while: quantas rodadas até obter a primeira face 6?
-
+let
+    # Experimento estocástico: quantas rodadas são necessárias até sair a primeira face 6?
+    # Teoria (Distribuição Geométrica com p = 1/6): E[T] = 1/p = 6 rodadas esperadas
+    num_tentativas = 100_000
+    rodadas_ate_seis = Int[]
+    
+    # 1. Para cada teste, inicie num_rodadas = 0
+    # 2. Use laço 'while true': sorteie rand(1:6), incremente num_rodadas, pare com 'break' se for 6
+    # 3. Guarde push!(rodadas_ate_seis, num_rodadas)
+    # 4. Calcule a média mean(rodadas_ate_seis) e plote o histograma das rodadas
+end
 
 # ╔═╡ 0763ea49-58b3-49af-a5b3-89364d6ccc30
-# Teste de sorteio aleatório de uma face
-
+# Sorteio individual de uma face: rand(1:6)
 
 # ╔═╡ c0000001-0000-0000-0000-000000000001
 md"""
@@ -115,9 +125,14 @@ Pela **Lei Forte dos Grandes Números**, a proporção de pontos que caem dentro
 """
 
 # ╔═╡ c0000001-0000-0000-0000-000000000002
-# Função de estimativa de π por Monte Carlo no quadrado [-1, 1]²
-# function estima_pi(N; semente=nothing)
-
+# Algoritmo de Monte Carlo para estimar π
+function estima_pi(N; semente=nothing)
+    # 1. Se fornecida, fixe a semente com Random.seed!(semente)
+    # 2. Gere N coordenadas x, y uniformes em [-1, 1]: 2 .* rand(N) .- 1.0
+    # 3. Condição do círculo unitário: dentro = (x.^2 .+ y.^2) .<= 1.0
+    # 4. Proporção empírica: pi_estimado = 4.0 * count(dentro) / N
+    # 5. Retorne (pi_estimado, x, y, dentro)
+end
 
 # ╔═╡ c0000001-0000-0000-0000-000000000003
 md"""
@@ -125,12 +140,18 @@ md"""
 """
 
 # ╔═╡ c0000001-0000-0000-0000-000000000004
-# Slider reativo com PlutoUI para variar o número de pontos N_pi
-
+# Slider reativo com PlutoUI para variar o número de amostras N_pi de 100 a 50.000
+@bind N_pi Slider([100, 500, 1_000, 2_000, 5_000, 10_000, 25_000, 50_000], default=1_000, show_value=true)
 
 # ╔═╡ c0000001-0000-0000-0000-000000000005
-# Gráfico de dispersão dos pontos (dentro/fora do círculo unitário) e contorno exato
-
+let
+    # Visualização geométrica da estimativa de π
+    # 1. Calcule pi_est, x, y, dentro = estima_pi(N_pi; semente=123)
+    # 2. Plote scatter dos pontos interiores (x[dentro], y[dentro], color=:blue)
+    # 3. Plote scatter dos pontos exteriores (x[.!dentro], y[.!dentro], color=:red)
+    # 4. Desenhe o círculo unitário com plot!(cos.(θ), sin.(θ), color=:black, lw=2.5)
+    # 5. Defina aspect_ratio=:equal para que o círculo não fique deformado
+end
 
 # ╔═╡ c0000001-0000-0000-0000-000000000006
 md"""
@@ -140,8 +161,13 @@ Pelo Teorema Central do Limite, o erro padrão de um estimador de Monte Carlo de
 """
 
 # ╔═╡ c0000001-0000-0000-0000-000000000007
-# Gráfico de convergência da estimativa de π em função de N (escala log10)
-
+let
+    # Análise de Convergência empírica: O erro decresce com 1/sqrt(N)
+    valores_N = [10, 50, 100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000, 50_000, 100_000]
+    # 1. Calcule as estimativas de π para cada n em valores_N
+    # 2. Plote com escala logarítmica no eixo X: plot(valores_N, estimativas, xscale=:log10)
+    # 3. Adicione a linha teórica com hline!([π], color=:red, ls=:dash, label="Valor Real π")
+end
 
 # ╔═╡ c0000002-0000-0000-0000-000000000001
 md"""
@@ -169,9 +195,14 @@ O **estimador de Monte Carlo** para a integral é a média amostral:
 """
 
 # ╔═╡ c0000002-0000-0000-0000-000000000002
-# Função para integração numérica de Monte Carlo de f(x) em [a, b]
-# function integra_monte_carlo(f, a, b, N; semente=nothing)
-
+# Estimador não-viesado para Integração Numérica de Monte Carlo: I = ∫_a^b f(x) dx
+function integra_monte_carlo(f, a, b, N; semente=nothing)
+    # 1. Amostre x uniformemente em [a, b]: x = a .+ (b - a) .* rand(N)
+    # 2. Calcule f(x) para cada ponto via broadcasting: valores_f = f.(x)
+    # 3. Estimativa da integral: integral_est = (b - a) * mean(valores_f)
+    # 4. Erro padrão teórico do estimador: erro_padrao = (b - a) * std(valores_f) / sqrt(N)
+    # 5. Retorne (integral_est, erro_padrao)
+end
 
 # ╔═╡ c0000002-0000-0000-0000-000000000003
 md"""
@@ -180,8 +211,11 @@ Calculando $\int_0^1 x^2\,dx = \left[\frac{x^3}{3}\right]_0^1 = \frac{1}{3} \app
 """
 
 # ╔═╡ c0000002-0000-0000-0000-000000000004
-# Exemplo 1: integral de x² em [0, 1] (valor analítico = 1/3)
-
+let
+    # Exemplo 1: Teste com a integral elementar ∫_0^1 x² dx = 1/3 ≈ 0.333333
+    f(x) = x^2
+    # I_mc, erro_padrao = integra_monte_carlo(f, 0.0, 1.0, 100_000; semente=42)
+end
 
 # ╔═╡ c0000002-0000-0000-0000-000000000005
 md"""
@@ -190,8 +224,11 @@ Calculando $\int_0^1 e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}\operatorname{erf}(1) \a
 """
 
 # ╔═╡ c0000002-0000-0000-0000-000000000006
-# Exemplo 2: integral de exp(-x²) em [0, 1] (integral Gaussiana)
-
+let
+    # Exemplo 2: Integral Gaussiana sem primitiva elementar simples: ∫_0^1 exp(-x²) dx ≈ 0.74682413
+    f_gauss(x) = exp(-x^2)
+    # I_mc, erro_padrao = integra_monte_carlo(f_gauss, 0.0, 1.0, 200_000; semente=123)
+end
 
 # ╔═╡ c0000003-0000-0000-0000-000000000001
 md"""
@@ -214,13 +251,18 @@ V = \iiint_{x^2 + y^2 + z^2 \leq 1} dx\,dy\,dz = \frac{4}{3}\pi \approx 4.188790
 """
 
 # ╔═╡ c0000003-0000-0000-0000-000000000002
-# Exercício: implemente a estimativa do volume da esfera unitária 3D em [-1, 1]³
-# function estima_volume_esfera(N; semente=42)
-
+# Exercício Prático: Estimar o Volume da Esfera Unitária em R³
+# Volume analítico: V = (4/3)*π ≈ 4.18879
+function estima_volume_esfera(N; semente=42)
+    # 1. Sorteie coordenadas x, y, z uniformes no cubo [-1, 1]³ (volume do cubo = 2³ = 8)
+    # 2. Condição do interior da esfera: dentro = (x.^2 .+ y.^2 .+ z.^2) .<= 1.0
+    # 3. Volume estimado: V_est = 8.0 * count(dentro) / N
+    # 4. Calcule o erro relativo percentual em relação a (4/3)*π
+    # 5. Retorne uma NamedTuple com os resultados: (V_estimado = V_est, V_exato = (4/3)*π, Erro_Relativo_Pct = ...)
+end
 
 # ╔═╡ c0000003-0000-0000-0000-000000000003
-# Teste do exercício com N = 100.000 amostras
-
+# Execute o exercício para N = 100.000 amostras: estima_volume_esfera(100_000)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """

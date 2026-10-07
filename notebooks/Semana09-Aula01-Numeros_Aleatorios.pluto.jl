@@ -7,7 +7,6 @@ using InteractiveUtils
 # ╔═╡ bfb664d9-019a-444d-8686-614d005b27b7
 # Digite o código aqui
 
-
 # ╔═╡ 059fcf85-0430-4894-b10e-3bca8cef70e8
 begin
 	using Plots, Distributions, StatsPlots, PlutoUI
@@ -35,24 +34,19 @@ Por que *pseudoaleatórios*? Porque os números são gerados por um algoritmo de
 """
 
 # ╔═╡ 96d3a166-ad98-498e-a9ae-cfb76207cd3b
-# Sorteia um número pseudoaleatório uniforme em [0, 1]
-
+# Sorteia um número pseudoaleatório contínuo uniforme no intervalo [0, 1)
 
 # ╔═╡ 52ba4da3-5f0c-46d8-af2b-2cd77581eff4
-# Teste novamente para observar um valor diferente
-
+# Execute novamente para observar a variabilidade dos valores sorteados
 
 # ╔═╡ 26e83a52-7e45-4ec8-8872-b66319890590
-# Vetor com 3 números aleatórios
-
+# Vetor com 3 números aleatórios uniformes: rand(n)
 
 # ╔═╡ ec401b61-4229-41de-b6db-ce6207d89711
-# Matriz 10x5 de números aleatórios
-
+# Matriz 10x5 de números aleatórios: rand(linhas, colunas)
 
 # ╔═╡ 01e1a626-75c2-4cd5-8266-a5d440905588
-# Tensor tridimensional 10x5x3
-
+# Tensor tridimensional (array 3D) 10x5x3: rand(dim1, dim2, dim3)
 
 # ╔═╡ da226b68-c767-472f-b2d5-582b6d9393e3
 md"""
@@ -70,29 +64,27 @@ md"""
 Para gerar números aleatórios uniformemente distribuídos em um intervalo arbitrário $[a,b]$, podemos realizar uma transformação linear na saída de `rand()`. Se $x$ é um número aleatório em $[0,1]$, então o número $y = a + (b-a)x$ será um número aleatório em $[a,b]$. Vamos ver isso em ação."""
 
 # ╔═╡ aa49d5d5-4a72-4469-91e3-20c7ae27ccba
-# Gera 5 números aleatórios no intervalo [-1, 1]
-
+# Desafio rápido: gere 5 números no intervalo [-1, 1] usando transformação linear sobre rand(5)
 
 # ╔═╡ 27811d93-d0e0-491b-be5a-aeb1fca818b2
-# Função para transformar o intervalo de [0, 1] para [a, b]
-# function escalar_intervalo(x, a, b)
-
+# Implemente a função de escala afim: y = a + (b - a) * x
+# Dica: use broadcasting (.+ e .*) para aceitar tanto números escalares quanto vetores
+function escalar_intervalo(x, a, b)
+    # Garanta que a < b usando @assert
+    # Retorne a transformação afim
+end
 
 # ╔═╡ 6d72a0a4-57ca-40c9-b670-d93edee0a448
-# Teste da função escalar_intervalo com 5 valores em [-1, 1]
-
+# Teste escalar_intervalo com 5 valores aleatórios no intervalo [-1, 1]
 
 # ╔═╡ 87498b94-9aa3-4ca5-ba04-98632127c8ea
-# Gera 13 números aleatórios no intervalo [4, 11]
-
+# Teste escalar_intervalo com 13 valores aleatórios no intervalo [4, 11]
 
 # ╔═╡ 82f5fa7f-ae1d-485f-9b5b-7e29c18e935a
-# Gerando números aleatórios com outros tipos numéricos (ex: BigFloat)
-
+# Gerando 20 números aleatórios de alta precisão com o tipo BigFloat: rand(BigFloat, 20)
 
 # ╔═╡ 3cc94421-e3b4-4043-92b2-2c4aa8917030
-# Gerando números aleatórios com Float32
-
+# Gerando 5 números aleatórios de precisão simples: rand(Float32, 5)
 
 # ╔═╡ 73948513-11ff-446c-865a-2166de7215c4
 md"""
@@ -102,20 +94,16 @@ A função `rand` é muito versátil. Além de gerar números de ponto flutuante
 """
 
 # ╔═╡ 575a99d5-d77c-45f5-90d3-23ff35633655
-# 3 inteiros aleatórios (de qualquer valor suportado por Int)
-
+# 3 inteiros aleatórios (amostrados de todo o espaço representável por Int64)
 
 # ╔═╡ e99de034-1e26-4ef4-9d63-ceaf364699f2
-# Seleciona aleatoriamente 3 inteiros de 1 a 10 (lançamento de dado de 10 faces)
-
+# Amostra 3 inteiros uniformes no intervalo discreto 1:10 (simula dado de 10 faces)
 
 # ╔═╡ b09d3fd9-d300-4ebf-97dc-ac1c5fe06e10
-# Coleção de elementos arbitrários
-
+# Defina uma coleção arbitrária com elementos heterogêneos, ex: [π, exp(1), -1.0]
 
 # ╔═╡ 255c397f-a2d3-420e-b156-17b05ec2083c
-# Amostragem com reposição a partir de uma coleção
-
+# Sorteie 2 elementos com reposição a partir da coleção definida acima: rand(colecao, 2)
 
 # ╔═╡ 16e62485-e05e-45e4-9a78-9de738cb3197
 md"""
@@ -124,12 +112,15 @@ md"""
 Outra distribuição essencial é a **distribuição normal**, frequentemente visualizada como a clássica "curva em forma de sino". A função `randn()` gera números aleatórios da distribuição normal *padrão*, que tem média 0 e desvio padrão 1."""
 
 # ╔═╡ 3fe92b5a-f73d-40e8-8d93-3b244fe838ea
-# Amostra da distribuição normal padrão N(0, 1)
-
+# Amostra da distribuição normal padrão N(0, 1) com randn()
 
 # ╔═╡ 064000a9-1de1-4f11-91ed-4d41c0ed11db
-# Visualização teórica da densidade Normal com Plots e Distributions
-
+let
+    # Plote a curva teórica da densidade Normal(μ, σ) usando o pacote Distributions
+    μ = 10
+    σ = 3
+    # plot(Normal(μ, σ), title="Distribuição Normal Teórica")
+end
 
 # ╔═╡ e05d0e49-0f9d-48a5-8fce-161295453b8a
 md"""
@@ -138,13 +129,18 @@ Assim como na distribuição uniforme, podemos escalar e deslocar a saída de `r
 Se $Z$ é uma variável aleatória da distribuição normal padrão, então a variável $X = \mu + \sigma Z$ segue uma distribuição normal com média $\mu$ e desvio padrão $\sigma$. Vamos usar isso para gerar números de uma distribuição normal com média 2 e desvio padrão 5."""
 
 # ╔═╡ ad6f80a1-d596-4ad2-bcb6-80ca394638f6
-# Função para transformar normal padrão para N(μ, σ²)
-# function escala_normal(X, μ, σ)
-
+# Implemente a transformação para Normal Geral: X = μ + σ * Z
+function escala_normal(X, μ, σ)
+    # Lembre-se do broadcasting: μ .+ σ .* X
+end
 
 # ╔═╡ bc1375a3-9e65-421b-829c-a01e6ab5305f
-# Amostra com média 2 e desvio padrão 5
-
+let
+    # Gere 20 amostras da Normal com média μ = 2 e desvio padrão σ = 5 usando randn(20)
+    μ = 2
+    σ = 5
+    # escala_normal(randn(20), μ, σ)
+end
 
 # ╔═╡ de04e293-442a-4c25-a904-4ad2c3381dcc
 md"""
@@ -157,25 +153,27 @@ Vamos começar escrevendo uma função simples para contar a frequência de resu
 """
 
 # ╔═╡ 13266118-4ee3-46bb-aeef-2b341dc4bb2a
-# Função para simular lançamento de dados de 'lados' faces
-
+# Simula o lançamento de dados com parâmetro nomeado para lados (padrão 6)
+function jogar_dados(num_tentativas; lados=6)
+    # rand(1:lados, num_tentativas)
+end
 
 # ╔═╡ d03b3166-3dac-4623-8d61-c516afae11d8
-# Teste: simula 20 lançamentos
-
+# Teste: simule 20 lançamentos de um dado padrão e guarde na variável tentativas_dados
 
 # ╔═╡ e3b7f100-9203-4be7-8dab-ac75c71d40a5
-# Vetor de possíveis saídas das faces (1 a 6)
-
+# Defina o vetor de possíveis resultados das faces: saidas = 1:6 (ou [1,2,3,4,5,6])
 
 # ╔═╡ a59e129c-22b7-4f81-b3b5-3185dde41a6d
-# Função para contar as ocorrências de cada face
-# function conta_histograma(saidas, tentativas)
-
+# Função para contar a frequência de cada face observada
+function conta_histograma(saidas, tentativas)
+    # 1. Inicialize o vetor de contagem com zeros: zeros(Int, length(saidas))
+    # 2. Percorra as tentativas e incremente a posição da face correspondente
+    # 3. Retorne o vetor contagem
+end
 
 # ╔═╡ 3d6592a3-4a06-4c9a-b9f3-29e278accab6
-# Calcula a frequência relativa (estimativa empírica de probabilidade)
-
+# Calcule a probabilidade empírica dividindo a contagem pelo total de tentativas (20)
 
 # ╔═╡ 47811425-7b5d-41a9-af21-d393a32a1847
 md"""
@@ -185,17 +183,21 @@ Segundo a Lei dos Grandes Números, à medida que aumentamos o número de testes
 """
 
 # ╔═╡ afacecce-3392-490d-a7bd-c5d5ad84bcf2
-# Função completa de simulação e gráfico de barras empírico vs linha teórica 1/6
-# function simula_dados(num_tentativas)
-
+# Função completa de simulação e visualização da Lei dos Grandes Números
+function simula_dados(num_tentativas)
+    # 1. Obtenha as tentativas via jogar_dados(num_tentativas)
+    # 2. Obtenha a contagem de cada face via conta_histograma(1:6, tentativas)
+    # 3. Calcule as probabilidades estimadas: probabilidades = contagem ./ num_tentativas
+    # 4. Plote bar(1:6, probabilidades, ylim=(0, 0.3), label=false)
+    # 5. Adicione a linha teórica de referência com hline!([1/6], color=:red, lw=2, label="1/6")
+end
 
 # ╔═╡ a1111111-0000-0000-0000-000000000001
-# Slider interativo do número de lançamentos N com PlutoUI
-
+# Slider reativo para variar o tamanho da amostra N e observar a convergência empírica
+@bind N_dados Slider([10, 50, 100, 500, 1_000, 5_000, 10_000, 50_000, 100_000], default=1_000, show_value=true)
 
 # ╔═╡ a1111111-0000-0000-0000-000000000002
-# Chamada reativa da simulação usando N_dados
-
+# Chamada reativa da simulação: simula_dados(N_dados)
 
 # ╔═╡ 941c8631-093d-4801-b6e2-74be4ad2a594
 md"""
@@ -206,11 +208,13 @@ A função `histogram` do `Plots.jl` agrupa automaticamente os dados em um núme
 """
 
 # ╔═╡ 0e2597b0-64f1-4763-b8fc-f584bf622b98
-# Histograma de 100.000 amostras normais usando histogram() do Plots
-
+begin
+    # Gere 100.000 números da normal padrão com randn e visualize o formato de sino com histogram()
+    # x = randn(100_000)
+    # histogram(x, bins=50, normalize=:pdf, label="Amostras", title="Histograma Normal")
+end
 
 # ╔═╡ b5519c30-db13-4aac-977e-53a3a600b785
-
 
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
