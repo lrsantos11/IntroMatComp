@@ -29,9 +29,12 @@ md"""
 """
 
 # ╔═╡ b6e88b48-e409-45fd-926f-e93276abd601
+# Função para simular lançamento de dados
+# function jogar_dados(num_tentativas; lados=6)
 
 
 # ╔═╡ 199f9de6-d0f8-4930-99a0-fe836571029a
+# Teste: jogar 10 dados
 
 
 # ╔═╡ ee5dbfee-5aeb-4f4d-b8ea-6650a6adb0a5
@@ -47,24 +50,32 @@ md"""
 """
 
 # ╔═╡ b55d7055-b86d-495c-bb38-4a6d2e2f7868
+# Criação de matriz por compreensão de listas (comprehension) vs laço for
 
 
 # ╔═╡ ea6091f0-a545-43c3-b159-eb0f6dda628b
 
 
+
 # ╔═╡ ebb5f1a1-47ab-4041-866b-52693787341e
+# Amostras independentes para múltiplos dados
 
 
 # ╔═╡ ee61ebcd-7b60-44b3-85eb-2cfd9f5b683e
+# Soma das jogadas
 
 
 # ╔═╡ 7de896f0-9e06-4611-92a9-3dc34c2a6df9
+# Simula a soma de dados e plota histograma da soma (Teorema Central do Limite)
+# function simula_soma_dados(num_dados, num_tentativas)
 
 
 # ╔═╡ 7231d5c7-c008-4837-8c54-24cc2d75ba37
+# Teste da soma de 2 dados (1.000 tentativas)
 
 
 # ╔═╡ 7b4ccf6c-5eb7-4e9d-bc77-35766c7fe080
+# Teste da soma de 10 dados (100.000 tentativas)
 
 
 # ╔═╡ dee98a52-87c7-4470-ae6e-f89a338efa46
@@ -76,9 +87,11 @@ Muitos problemas em matemática e ciência são complexos demais para resolver c
 Como primeiro exemplo, vamos considerar uma pergunta simples: em média, quantas vezes é preciso lançar um dado padrão até sair um 6? Podemos simular esse experimento milhares de vezes e encontrar a média."""
 
 # ╔═╡ 54cb725a-1da7-4c78-8403-ce8db17ebabe
+# Simulação com laço while: quantas rodadas até obter a primeira face 6?
 
 
 # ╔═╡ 0763ea49-58b3-49af-a5b3-89364d6ccc30
+# Teste de sorteio aleatório de uma face
 
 
 # ╔═╡ c0000001-0000-0000-0000-000000000001
@@ -102,6 +115,8 @@ Pela **Lei Forte dos Grandes Números**, a proporção de pontos que caem dentro
 """
 
 # ╔═╡ c0000001-0000-0000-0000-000000000002
+# Função de estimativa de π por Monte Carlo no quadrado [-1, 1]²
+# function estima_pi(N; semente=nothing)
 
 
 # ╔═╡ c0000001-0000-0000-0000-000000000003
@@ -110,9 +125,11 @@ md"""
 """
 
 # ╔═╡ c0000001-0000-0000-0000-000000000004
+# Slider reativo com PlutoUI para variar o número de pontos N_pi
 
 
 # ╔═╡ c0000001-0000-0000-0000-000000000005
+# Gráfico de dispersão dos pontos (dentro/fora do círculo unitário) e contorno exato
 
 
 # ╔═╡ c0000001-0000-0000-0000-000000000006
@@ -123,6 +140,7 @@ Pelo Teorema Central do Limite, o erro padrão de um estimador de Monte Carlo de
 """
 
 # ╔═╡ c0000001-0000-0000-0000-000000000007
+# Gráfico de convergência da estimativa de π em função de N (escala log10)
 
 
 # ╔═╡ c0000002-0000-0000-0000-000000000001
@@ -151,6 +169,8 @@ O **estimador de Monte Carlo** para a integral é a média amostral:
 """
 
 # ╔═╡ c0000002-0000-0000-0000-000000000002
+# Função para integração numérica de Monte Carlo de f(x) em [a, b]
+# function integra_monte_carlo(f, a, b, N; semente=nothing)
 
 
 # ╔═╡ c0000002-0000-0000-0000-000000000003
@@ -160,6 +180,7 @@ Calculando $\int_0^1 x^2\,dx = \left[\frac{x^3}{3}\right]_0^1 = \frac{1}{3} \app
 """
 
 # ╔═╡ c0000002-0000-0000-0000-000000000004
+# Exemplo 1: integral de x² em [0, 1] (valor analítico = 1/3)
 
 
 # ╔═╡ c0000002-0000-0000-0000-000000000005
@@ -169,6 +190,7 @@ Calculando $\int_0^1 e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}\operatorname{erf}(1) \a
 """
 
 # ╔═╡ c0000002-0000-0000-0000-000000000006
+# Exemplo 2: integral de exp(-x²) em [0, 1] (integral Gaussiana)
 
 
 # ╔═╡ c0000003-0000-0000-0000-000000000001
@@ -192,9 +214,12 @@ V = \iiint_{x^2 + y^2 + z^2 \leq 1} dx\,dy\,dz = \frac{4}{3}\pi \approx 4.188790
 """
 
 # ╔═╡ c0000003-0000-0000-0000-000000000002
+# Exercício: implemente a estimativa do volume da esfera unitária 3D em [-1, 1]³
+# function estima_volume_esfera(N; semente=42)
 
 
 # ╔═╡ c0000003-0000-0000-0000-000000000003
+# Teste do exercício com N = 100.000 amostras
 
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
