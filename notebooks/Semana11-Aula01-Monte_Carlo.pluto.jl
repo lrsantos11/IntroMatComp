@@ -38,40 +38,91 @@ md"""
 Os **Métodos de Monte Carlo** constituem uma classe ampla de algoritmos computacionais que utilizam amostragem pseudoaleatória para obter soluções numéricas para problemas quantitativos que podem ser determinísticos ou estocásticos.
 
 Criado na década de 1940 durante o Projeto Manhattan por Stanislaw Ulam, John von Neumann e Nicholas Metropolis, o método apoia-se no princípio fundamental da **Lei Forte dos Grandes Números**: 
-se interpretarmos uma quantidade matemática de interesse como a esperança $\mathbb{E}[g(X)]$ de uma variável aleatória $X$, a média amostral de $N$ realizações independentes converge quase certamente para o valor real:
+se interpretarmos uma quantidade matemática de interesse como a esperança $\mathbb{E}[g(X)]$ de uma variável aleatória contínua $X$ com função densidade de probabilidade $f_X(x)$, a média amostral de $N$ realizações independentes converge quase certamente para o valor esperado (que é uma integral!):
 ```math
-\frac{1}{N} \sum_{i=1}^N g(X_i) \xrightarrow{N \to \infty} \mathbb{E}[g(X)]
+\frac{1}{N} \sum_{i=1}^N g(X_i) \xrightarrow{N \to \infty} \mathbb{E}[g(X)] = \int_{-\infty}^{\infty} g(x)\,f_X(x)\,dx
 ```
 """
 
+# ╔═╡ c0000000-0000-0000-0000-000000000001
+md"""
+## 1. Recordando: Densidade de Probabilidade e Escalonamento
+
+Na aula passada (Semana 09), estudamos as duas distribuições contínuas mais importantes para simulação:
+
+1. **Distribuição Uniforme $X \sim U(a, b)$:** Todos os subintervalos de mesmo comprimento em $[a, b]$ têm a mesma probabilidade. Sua **função densidade de probabilidade (f.d.p.)** é constante no intervalo:
+```math
+f_U(x) = \begin{cases} \dfrac{1}{b - a}, & \text{se } a \leq x \leq b \\[6pt] 0, & \text{caso contrário} \end{cases}
+```
+2. **Distribuição Normal $X \sim \mathcal{N}(\mu, \sigma^2)$:** Caracterizada pela clássica curva em forma de sino, centrada na média $\mu$ e com dispersão dada pelo desvio padrão $\sigma$:
+```math
+f_N(x) = \frac{1}{\sigma\sqrt{2\pi}} \exp\left(-\frac{(x - \mu)^2}{2\sigma^2}\right)
+```
+
+Vamos visualizar novamente as curvas teóricas de densidade usando `Distributions.jl` e `StatsPlots.jl`, exatamente como fizemos na aula anterior:
+"""
+
+# ╔═╡ c0000000-0000-0000-0000-000000000002
+let
+    # Gráficos das funções densidade de probabilidade (f.d.p.) com Distributions + StatsPlots
+    p_unif = plot(Uniform(-1, 1), fill=(0, 0.25, :steelblue), lw=2.5, color=:steelblue,
+                  title="Uniforme U(-1, 1)", xlabel="x", ylabel="Densidade f(x)",
+                  label="f(x) = 1/2", xlims=(-2, 2), ylims=(0, 0.7))
+    
+    p_norm = plot(Normal(0, 1), fill=(0, 0.25, :firebrick), lw=2.5, color=:firebrick,
+                  title="Normal Padrão N(0, 1)", xlabel="x", ylabel="Densidade f(x)",
+                  label="N(0, 1)", xlims=(-4, 4), ylims=(0, 0.45))
+    
+    plot(p_unif, p_norm, layout=(1, 2), size=(800, 320))
+end
+
+# ╔═╡ c0000000-0000-0000-0000-000000000003
+md"""
+### Relembrando a mudança de escala: de $[0, 1]$ para $[a, b]$
+
+Lembre-se de que `rand(N)` gera amostras uniformes no intervalo padrão $[0, 1]$. Na aula passada, construímos a função `escalar_intervalo(x, a, b)` usando a transformação afim $y = a + (b - a)x$. 
+
+Em particular, para mapear pontos de $[0, 1]$ para o intervalo simétrico $[-1, 1]$ ($a = -1$ e $b = 1$), temos $b - a = 2$, ou seja, $y = -1 + 2x$:
+"""
+
+# ╔═╡ c0000000-0000-0000-0000-000000000004
+# Função da Aula 09 para mapear amostras de [0, 1] para um intervalo arbitrário [a, b]
+function escalar_intervalo(x, a, b)
+    @assert a < b "O limite inferior a deve ser estritamente menor que b"
+    return a .+ (b - a) .* x # Broadcasting (.+ e .*) permite passar tanto escalar quanto vetor
+end
+
+# ╔═╡ c0000000-0000-0000-0000-000000000005
+# Exemplo: transformando 5 pontos de U(0, 1) para U(-1, 1)
+escalar_intervalo(rand(5), -1.0, 1.0)
+
 # ╔═╡ c0000001-0000-0000-0000-000000000001
 md"""
-## Estimativa de $\pi$ por Monte Carlo
+## 2. Estimativa de $\pi$ por Monte Carlo
 
-Um dos exemplos canônicos do método de Monte Carlo é a aproximação da constante $\pi$.
+Um dos exemplos geométricos clássicos do método de Monte Carlo é a aproximação da constante $\pi$.
 
 Considere o quadrado $[-1, 1] \times [-1, 1]$, cuja área é $A_{\text{quadrado}} = 2 \times 2 = 4$.
 O círculo unitário centrado na origem tem raio $r = 1$ e área $A_{\text{círculo}} = \pi r^2 = \pi$.
 
-Se sortearmos $N$ pontos uniformemente distribuídos $(X_i, Y_i) \sim U([-1, 1]^2)$, a probabilidade de um ponto cair no interior do círculo ($X_i^2 + Y_i^2 \leq 1$) é a razão entre as áreas:
+Se sortearmos $N$ pontos independentes e uniformemente distribuídos $(X_i, Y_i) \sim U([-1, 1]^2)$ — usando `escalar_intervalo(rand(N), -1, 1)` para cada coordenada —, a probabilidade geométrica de um ponto cair no interior do círculo ($X_i^2 + Y_i^2 \leq 1$) é a razão entre as áreas:
 ```math
 P((X, Y) \in \text{círculo}) = \frac{A_{\text{círculo}}}{A_{\text{quadrado}}} = \frac{\pi}{4}
 ```
 
-Pela **Lei Forte dos Grandes Números**, a proporção de pontos que caem dentro do círculo converge quase certamente para a probabilidade teórica:
+Pela **Lei dos Grandes Números**, a fração amostral de pontos que caem dentro do círculo converge para essa probabilidade:
 ```math
 \frac{N_{\text{dentro}}}{N} \xrightarrow{N \to \infty} \frac{\pi}{4} \implies \pi \approx 4 \cdot \frac{N_{\text{dentro}}}{N}
 ```
 """
 
 # ╔═╡ c0000001-0000-0000-0000-000000000002
-# Algoritmo de Monte Carlo para estimar π
 function estima_pi(N; semente=nothing)
-    # 1. Se fornecida, fixe a semente com Random.seed!(semente)
-    # 2. Gere N coordenadas x, y uniformes em [-1, 1]: 2 .* rand(N) .- 1.0
-    # 3. Condição do círculo unitário: dentro = (x.^2 .+ y.^2) .<= 1.0
-    # 4. Proporção empírica: pi_estimado = 4.0 * count(dentro) / N
-    # 5. Retorne (pi_estimado, x, y, dentro)
+    # 1. Se `semente` não for `nothing`, fixe o estado do gerador pseudoaleatório
+    # 2. Sorteie N coordenadas x e y em [-1, 1] reutilizando `escalar_intervalo`
+    # 3. Crie um vetor booleano (`dentro`) verificando quais pares satisfazem x² + y² ≤ 1 (use broadcasting)
+    # 4. Conte os acertos com `count(dentro)` e multiplique a proporção pela área do quadrado
+    # 5. Retorne a tupla (pi_estimado, x, y, dentro)
 end
 
 # ╔═╡ c0000001-0000-0000-0000-000000000003
@@ -80,68 +131,78 @@ md"""
 """
 
 # ╔═╡ c0000001-0000-0000-0000-000000000004
-# Slider reativo com PlutoUI para variar o número de amostras N_pi de 100 a 50.000
-@bind N_pi Slider([100, 500, 1_000, 2_000, 5_000, 10_000, 25_000, 50_000], default=1_000, show_value=true)
+@bind N_pi Slider([10, 50, 100, 500, 1_000, 2_000, 5_000, 10_000, 25_000, 50_000], default=10, show_value=true)
 
 # ╔═╡ c0000001-0000-0000-0000-000000000005
 let
     # Visualização geométrica da estimativa de π
-    # 1. Calcule pi_est, x, y, dentro = estima_pi(N_pi; semente=123)
-    # 2. Plote scatter dos pontos interiores (x[dentro], y[dentro], color=:blue)
-    # 3. Plote scatter dos pontos exteriores (x[.!dentro], y[.!dentro], color=:red)
-    # 4. Desenhe o círculo unitário com plot!(cos.(θ), sin.(θ), color=:black, lw=2.5)
-    # 5. Defina aspect_ratio=:equal para que o círculo não fique deformado
+    # 1. Obtenha pi_est, x, y, dentro chamando `estima_pi(N_pi; semente=123)`
+    # 2. Separe os pontos internos (`x[dentro], y[dentro]`) e externos (`x[.!dentro], y[.!dentro]`) com `scatter`
+    # 3. Sobreponha a circunferência parametrizada por (cos θ, sin θ) para θ ∈ [0, 2π]
+    # 4. Use `aspect_ratio=:equal` para preservar a proporção geométrica 1:1 dos eixos
 end
 
 # ╔═╡ c0000001-0000-0000-0000-000000000006
 md"""
-### Convergência e Taxa de Erro
+### Convergência e Taxa de Erro: O papel do Teorema Central do Limite
 
-Pelo Teorema Central do Limite, o erro padrão de um estimador de Monte Carlo decresce proporcionalmente a $\mathcal{O}(1/\sqrt{N})$. Vamos observar empiricamente a estimativa de $\pi$ se estabilizando em torno do valor real à medida que $N$ cresce:
+Por que precisamos quadruplicar ou multiplicar por $100$ o número de pontos para ganhar apenas uma casa decimal extra de precisão?
+
+Aqui entra um resultado fundamental da Probabilidade e Estatística, o **Teorema Central do Limite (TCL)**:
+> **O que diz o TCL?** Se tomarmos a média amostral $\bar{Z}_N = \frac{1}{N}\sum_{i=1}^N Z_i$ de $N$ variáveis aleatórias independentes (com média $\mu$ e desvio padrão $\sigma$), então, para $N$ grande, a distribuição dessa média aproxima-se de uma **Distribuição Normal** centrada no valor exato $\mu$, mas com um desvio padrão (chamado de **erro padrão da média**) igual a:
+> ```math
+> \sigma_{\bar{Z}_N} = \frac{\sigma}{\sqrt{N}}
+> ```
+
+Isso significa que a incerteza (o erro típico) de **qualquer** estimador de Monte Carlo cai proporcionalmente a $\mathcal{O}(1/\sqrt{N})$:
+- Para reduzir o erro pela **metade**, precisamos de $4\times$ mais amostras ($\sqrt{4} = 2$).
+- Para ganhar **1 dígito decimal** de precisão (reduzir o erro por um fator $10$), precisamos de $100\times$ mais amostras ($\sqrt{100} = 10$)!
+
+Vamos observar empiricamente a estimativa de $\pi$ se estabilizando em torno do valor real à medida que $N$ cresce em escala logarítmica:
 """
 
 # ╔═╡ c0000001-0000-0000-0000-000000000007
 let
-    # Análise de Convergência empírica: O erro decresce com 1/sqrt(N)
     valores_N = [10, 50, 100, 200, 500, 1_000, 2_000, 5_000, 10_000, 20_000, 50_000, 100_000]
-    # 1. Calcule as estimativas de π para cada n em valores_N
-    # 2. Plote com escala logarítmica no eixo X: plot(valores_N, estimativas, xscale=:log10)
-    # 3. Adicione a linha teórica com hline!([π], color=:red, ls=:dash, label="Valor Real π")
+    # 1. Use uma compreensão de lista para extrair `estima_pi(n; semente=42)[1]` para cada n em `valores_N`
+    # 2. Plote `valores_N` vs estimativas usando escala logarítmica no eixo horizontal (`xscale=:log10`)
+    # 3. Adicione a reta horizontal de referência em π com `hline!([π], ls=:dash)`
 end
 
 # ╔═╡ c0000002-0000-0000-0000-000000000001
 md"""
-## Integração Numérica de Monte Carlo
+## 3. Integração Numérica de Monte Carlo
 
-Desejamos calcular a integral definida:
+Desejamos calcular a integral definida de uma função $g(x)$ em $[a, b]$:
 ```math
-I = \int_a^b f(x)\,dx
+I = \int_a^b g(x)\,dx
 ```
 
-Podemos reescrever $I$ como o valor esperado de $f(X)$ sob uma distribuição uniforme $X \sim U(a, b)$, cuja função densidade de probabilidade é $p(x) = \frac{1}{b - a}$:
+Recordando que a função densidade de probabilidade da distribuição uniforme $X \sim U(a, b)$ é $f_U(x) = \frac{1}{b - a}$ para $x \in [a, b]$, podemos multiplicar e dividir o integrando por $(b - a)$:
 ```math
-I = (b - a) \int_a^b f(x) \frac{1}{b - a}\,dx = (b - a) \cdot \mathbb{E}[f(X)]
+I = (b - a) \int_a^b g(x) \underbrace{\frac{1}{b - a}}_{f_U(x)}\,dx = (b - a) \cdot \mathbb{E}[g(X)]
 ```
 
-O **estimador de Monte Carlo** para a integral é a média amostral:
+Isto é: **a integral de $g(x)$ em $[a, b]$ nada mais é do que o comprimento do intervalo $(b - a)$ multiplicado pelo valor médio de $g(X)$ para pontos sorteados uniformemente em $[a, b]$!**
+
+O **estimador de Monte Carlo** para a integral substitui a esperança teórica pela média amostral:
 ```math
-\hat{I}_N = \frac{b - a}{N} \sum_{i=1}^N f(X_i), \quad X_i \overset{\text{i.i.d.}}{\sim} U(a, b)
+\hat{I}_N = (b - a) \cdot \frac{1}{N} \sum_{i=1}^N g(X_i), \quad X_i \overset{\text{i.i.d.}}{\sim} U(a, b)
 ```
 
-### Propriedades Matemáticas do Estimador:
+### Propriedades do Estimador:
 1. **Não viesado:** $\mathbb{E}[\hat{I}_N] = I$.
-2. **Variância e Erro Padrão:** $\sigma_{\hat{I}_N} = \frac{(b - a)\sigma_f}{\sqrt{N}} = \mathcal{O}\left(\frac{1}{\sqrt{N}}\right)$.
-3. **A Vantagem Dimensional:** Em dimensão $d$, as regras determinísticas (Trapézios, Simpson) exigem $M^d = N$ pontos e têm erro $\mathcal{O}(N^{-k/d})$, degradando-se rapidamente quando $d$ é grande (a *maldição da dimensionalidade*). Em contraste, o erro de Monte Carlo permanece $\mathcal{O}(N^{-1/2})$ **independentemente da dimensão $d$**!
+2. **Erro Padrão (via TCL):** $\sigma_{\hat{I}_N} = (b - a)\frac{\sigma_g}{\sqrt{N}} = \mathcal{O}\left(\frac{1}{\sqrt{N}}\right)$, onde $\sigma_g$ é o desvio padrão amostral dos valores $g(X_i)$.
+3. **Por que usar Monte Carlo em múltiplas dimensões?** Em dimensão $d$ (integrais duplas, triplas ou em $\mathbb{R}^d$), regras determinísticas de quadratura (como Trapézios ou Simpson) dividem cada eixo em $M$ subintervalos, exigindo $N = M^d$ avaliações da função, com erro $\mathcal{O}(N^{-k/d})$. Quando $d$ é alto, isso torna o cálculo impraticável (*maldição da dimensionalidade*). Já o erro de Monte Carlo decai como $\mathcal{O}(N^{-1/2})$ **em qualquer dimensão $d$**!
 """
 
 # ╔═╡ c0000002-0000-0000-0000-000000000002
-# Estimador não-viesado para Integração Numérica de Monte Carlo: I = ∫_a^b f(x) dx
-function integra_monte_carlo(f, a, b, N; semente=nothing)
-    # 1. Amostre x uniformemente em [a, b]: x = a .+ (b - a) .* rand(N)
-    # 2. Calcule f(x) para cada ponto via broadcasting: valores_f = f.(x)
-    # 3. Estimativa da integral: integral_est = (b - a) * mean(valores_f)
-    # 4. Erro padrão teórico do estimador: erro_padrao = (b - a) * std(valores_f) / sqrt(N)
-    # 5. Retorne (integral_est, erro_padrao)
+function integra_monte_carlo(g, a, b, N; semente=nothing)
+    # 1. Sorteie N pontos uniformes em [a, b] usando `escalar_intervalo(rand(N), a, b)`
+    # 2. Avalie a função `g` em todos os pontos sorteados via broadcasting
+    # 3. Calcule a estimativa da integral: comprimento do intervalo (b - a) vezes a média amostral `mean(...)`
+    # 4. Calcule o erro padrão via TCL: (b - a) vezes o desvio padrão amostral `std(...)` dividido por √N
+    # 5. Retorne (integral_estimada, erro_padrao)
 end
 
 # ╔═╡ c0000002-0000-0000-0000-000000000003
@@ -152,9 +213,8 @@ Calculando $\int_0^1 x^2\,dx = \left[\frac{x^3}{3}\right]_0^1 = \frac{1}{3} \app
 
 # ╔═╡ c0000002-0000-0000-0000-000000000004
 let
-    # Exemplo 1: Teste com a integral elementar ∫_0^1 x² dx = 1/3 ≈ 0.333333
-    f(x) = x^2
-    # I_mc, erro_padrao = integra_monte_carlo(f, 0.0, 1.0, 100_000; semente=42)
+    g(x) = x^2
+    # Aplique `integra_monte_carlo` em [0.0, 1.0] com N = 100_000 e compare o erro real com o erro padrão do TCL
 end
 
 # ╔═╡ c0000002-0000-0000-0000-000000000005
@@ -165,44 +225,59 @@ Calculando $\int_0^1 e^{-x^2}\,dx = \frac{\sqrt{\pi}}{2}\operatorname{erf}(1) \a
 
 # ╔═╡ c0000002-0000-0000-0000-000000000006
 let
-    # Exemplo 2: Integral Gaussiana sem primitiva elementar simples: ∫_0^1 exp(-x²) dx ≈ 0.74682413
-    f_gauss(x) = exp(-x^2)
-    # I_mc, erro_padrao = integra_monte_carlo(f_gauss, 0.0, 1.0, 200_000; semente=123)
+    g_gauss(x) = exp(-x^2)
+    # Aplique `integra_monte_carlo` em [0.0, 1.0] com N = 200_000 e compare com o valor de referência 0.7468241328
 end
 
 # ╔═╡ c0000003-0000-0000-0000-000000000001
 md"""
-## Exercício Prático: Volume da Esfera Unitária em $\mathbb{R}^3$
+## 4. Exercício Prático: Volume da Esfera em $\mathbb{R}^3$ (Cálculo 3 vs. Monte Carlo)
 
-Neste exercício, aplicaremos Monte Carlo para estimar o volume de uma esfera unitária:
+Vamos lembrar como calculamos o volume de uma esfera de raio $R$ ($x^2 + y^2 + z^2 \leq R^2$) lá em **Cálculo 3**, usando **coordenadas esféricas**:
 ```math
-V = \iiint_{x^2 + y^2 + z^2 \leq 1} dx\,dy\,dz = \frac{4}{3}\pi \approx 4.18879020479
+\begin{cases}
+x = \rho \sin\varphi \cos\theta \\
+y = \rho \sin\varphi \sin\theta \\
+z = \rho \cos\varphi
+\end{cases}
+\quad \text{com Jacobiano } dV = dx\,dy\,dz = \rho^2 \sin\varphi\,d\rho\,d\varphi\,d\theta
+```
+Integrando nas três variáveis independentes ($\rho \in [0, R]$, ângulo polar $\varphi \in [0, \pi]$ e azimutal $\theta \in [0, 2\pi]$):
+```math
+\begin{align}
+V(R) & = \iiint_{x^2 + y^2 + z^2 \leq R^2} dx\,dy\,dz 
+= \left(\int_0^{2\pi} d\theta\right) \left(\int_0^{\pi} \sin\varphi\,d\varphi\right) \left(\int_0^R \rho^2\,d\rho\right) \\
+& = (2\pi) \cdot \Big[-\cos\varphi\Big]_0^\pi \cdot \left[\frac{\rho^3}{3}\right]_0^R  \\ 
+& = 2\pi \cdot 2 \cdot \frac{R^3}{3} = \frac{4}{3}\pi R^3
+\end{align}
+```
+Para a **esfera unitária** ($R = 1$), temos portanto:
+```math
+V(1) = \frac{4}{3}\pi (1)^3 = \frac{4}{3}\pi \approx 4.18879020479
 ```
 
-> **Instruções:**
-> 1. Considere a caixa delimitadora $[-1, 1] \times [-1, 1] \times [-1, 1]$, que possui volume $V_{\text{cubo}} = 2^3 = 8$.
-> 2. Gere $N = 100.000$ pontos uniformemente distribuídos no cubo tridimensional: $x, y, z \sim U(-1, 1)$.
-> 3. Identifique quantos pontos satisfazem a inequação $x_i^2 + y_i^2 + z_i^2 \leq 1$.
-> 4. Estime o volume através da razão:
+### Como estimar essa integral tripla via Monte Carlo sem usar coordenadas esféricas?
+> **Roteiro de implementação:**
+> 1. Inscreva a esfera unitária no cubo $[-1, 1] \times [-1, 1] \times [-1, 1]$, cujo volume é $V_{\text{cubo}} = 2^3 = 8$.
+> 2. Gere $N = 100.000$ pontos uniformes no cubo tridimensional usando `escalar_intervalo(rand(N), -1.0, 1.0)` para cada eixo ($x$, $y$ e $z$).
+> 3. Verifique quais pontos caem dentro da esfera: $x_i^2 + y_i^2 + z_i^2 \leq 1$.
+> 4. Multiplique a proporção de acertos pelo volume do cubo:
 > ```math
-> V_{\text{esfera}} \approx 8 \cdot \frac{N_{\text{dentro}}}{N}
+> V_{\text{esfera}} \approx V_{\text{cubo}} \cdot \frac{N_{\text{dentro}}}{N} = 8 \cdot \frac{N_{\text{dentro}}}{N}
 > ```
-> 5. Calcule o erro relativo percentual em relação ao valor exato $\frac{4}{3}\pi$.
+> 5. Compare com o valor analítico $\frac{4}{3}\pi$ calculando o erro relativo percentual.
 """
 
 # ╔═╡ c0000003-0000-0000-0000-000000000002
-# Exercício Prático: Estimar o Volume da Esfera Unitária em R³
-# Volume analítico: V = (4/3)*π ≈ 4.18879
 function estima_volume_esfera(N; semente=42)
-    # 1. Sorteie coordenadas x, y, z uniformes no cubo [-1, 1]³ (volume do cubo = 2³ = 8)
-    # 2. Condição do interior da esfera: dentro = (x.^2 .+ y.^2 .+ z.^2) .<= 1.0
-    # 3. Volume estimado: V_est = 8.0 * count(dentro) / N
-    # 4. Calcule o erro relativo percentual em relação a (4/3)*π
-    # 5. Retorne uma NamedTuple com os resultados: (V_estimado = V_est, V_exato = (4/3)*π, Erro_Relativo_Pct = ...)
+    # 1. Sorteie coordenadas x, y, z uniformes em [-1, 1] reutilizando `escalar_intervalo`
+    # 2. Identifique os pontos que satisfazem x² + y² + z² ≤ 1
+    # 3. Estime o volume multiplicando a proporção de pontos internos pelo volume do cubo (2³ = 8)
+    # 4. Calcule o erro relativo percentual em relação a (4/3)*π e retorne os resultados em uma NamedTuple
 end
 
 # ╔═╡ c0000003-0000-0000-0000-000000000003
-# Execute o exercício para N = 100.000 amostras: estima_volume_esfera(100_000)
+# Teste sua função para N = 100_000 amostras
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1931,6 +2006,11 @@ uuid = "23338594-aafe-5451-b93e-139f81909106"
 # ╠═01777032-ab5b-11f0-1945-d71872063676
 # ╠═854b20ee-4a64-49fc-95ae-bbdc4b3337e9
 # ╟─d17fb0a3-4f9e-4c23-a4f5-655a74db6803
+# ╟─c0000000-0000-0000-0000-000000000001
+# ╠═c0000000-0000-0000-0000-000000000002
+# ╟─c0000000-0000-0000-0000-000000000003
+# ╠═c0000000-0000-0000-0000-000000000004
+# ╠═c0000000-0000-0000-0000-000000000005
 # ╟─c0000001-0000-0000-0000-000000000001
 # ╠═c0000001-0000-0000-0000-000000000002
 # ╟─c0000001-0000-0000-0000-000000000003
