@@ -790,3 +790,9 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/latex,visualstudio,macos,linux
+
+# Arquivos do Professor e Gabaritos (manter apenas localmente, não versionar no repositório público dos alunos)
+*_SEMGIT*
+*_Professor_SEMGIT.pluto.jl
+*_gabarito.md
+
