@@ -795,4 +795,6 @@ FodyWeavers.xsd
 *_SEMGIT*
 *_Professor_SEMGIT.pluto.jl
 *_gabarito.md
+*backup*.jl
+
 

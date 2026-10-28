@@ -16,328 +16,549 @@ macro bind(def, element)
     #! format: on
 end
 
-# ╔═╡ b1000000-0000-0000-0000-000000000001
+# ╔═╡ d1000000-0000-0000-0000-000000000001
 md"""
 ## UFSC/Blumenau
 ### MAT4642 - Introdução à Matemática Computacional
 ### Prof. Luiz-Rafael Santos
-### Semana 13 - Aula 01: Ajuste de Curvas por Quadrados Mínimos e Fatoração QR
+### Semana 12 - Aula 02: Álgebra Linear Prática e Introdução a Quadrados Mínimos
 """
 
-# ╔═╡ b1000000-0000-0000-0000-000000000002
+# ╔═╡ d1000000-0000-0000-0000-000000000002
 begin
 	using LinearAlgebra
 	using Plots
 	using PlutoUI
+	using BenchmarkTools
 	using Random
 	using Statistics: mean
 end
 
-# ╔═╡ b1000000-0000-0000-0000-000000000003
+# ╔═╡ d1000000-0000-0000-0000-000000000003
 md"""
-# 1. O Problema de Quadrados Mínimos Linear
+# Visão Geral da Aula de Hoje
 
-Em ciências aplicadas e engenharia, é rotineiro coletar um conjunto de $m$ observações experimentais $\{(x_i, y_i)\}_{i=1}^m$ sujeitas a ruídos de medição e buscar um modelo matemático que melhor descreva a tendência dos dados.
+Na aula anterior, revisamos conceitos de vetores, matrizes e normas. Hoje estruturamos nossa aula em duas partes complementares:
 
-Suponha que queremos aproximar os dados por uma combinação linear de $n$ funções de base conhecidas $\phi_j(x)$ (por exemplo, monômios $\phi_j(x) = x^{j-1}$, senos, cossenos, etc.):
-$$y(x) \approx c_1 \phi_1(x) + c_2 \phi_2(x) + \cdots + c_n \phi_n(x).$$
-
-Avaliando o modelo em cada um dos $m$ pontos observados ($m > n$), obtemos o **sistema sobredeterminado**:
-$$A c \approx y,$$
-onde a matriz do modelo $A \in \mathbb{R}^{m \times n}$ e o vetor de observações $y \in \mathbb{R}^m$ são dados por:
-$$A = \begin{bmatrix} \phi_1(x_1) & \phi_2(x_1) & \cdots & \phi_n(x_1) \\ \phi_1(x_2) & \phi_2(x_2) & \cdots & \phi_n(x_2) \\ \vdots & \vdots & \ddots & \vdots \\ \phi_1(x_m) & \phi_2(x_m) & \cdots & \phi_n(x_m) \end{bmatrix}, \quad c = \begin{bmatrix} c_1 \\ c_2 \\ \vdots \\ c_n \end{bmatrix}, \quad y = \begin{bmatrix} y_1 \\ y_2 \\ \vdots \\ y_m \end{bmatrix}.$$
-
-Como $m > n$, em geral $y \notin \text{Im}(A)$ devido ao ruído experimental, de modo que o sistema exato não possui solução. O método dos **Quadrados Mínimos** busca o vetor de coeficientes $c^* \in \mathbb{R}^n$ que minimiza a soma dos quadrados dos resíduos:
-$$\min_{c \in \mathbb{R}^n} f(c) = \frac{1}{2} \|A c - y\|_2^2 = \frac{1}{2} \sum_{i=1}^m \left( \sum_{j=1}^n c_j \phi_j(x_i) - y_i \right)^2.$$
+1. **Parte 1 — Treino Prático de Álgebra Linear & Desempenho:**
+   - **Transposição de matrizes "na mão"** com laços `for` (relembrando indexação bidimensional e controle de fluxo);
+   - **Memória física e *Column-Major Order* em Julia:** entendendo a representação por colunas (e indexação linear) e por que a ordem de iteração afeta radicalmente o cache da CPU;
+   - **Matrizes Estruturadas com `LinearAlgebra`:** explorando matrizes tridiagonais sem alocar zeros desnecessários;
+   - **Fatoração LU com `LinearAlgebra`:** desvendando o objeto `lu(A)`, os fatores $L$ e $U$, resolução triangular em dois passos vs operador `\`, e o ganho real ao resolver para múltiplos lados direitos.
+2. **Parte 2 — A Transição para Sistemas Sobredeterminados (Quadrados Mínimos):**
+   - O que ocorre quando temos mais equações do que variáveis ($m > n$)?
+   - Minimização do resíduo $\|Ax - b\|_2^2$;
+   - **Equações Normais ($A^T A x = A^T b$)** versus **Fatoração QR / Operador Nativo (`A \ b`)** e o problema do condicionamento $\kappa(A^T A) = (\kappa(A))^2$;
+   - Ajuste linear e ajuste polinomial via matriz de Vandermonde;
+   - **Laboratório Interativo com PlutoUI:** experimentando ruído, grau do polinômio, *underfitting*, *overfitting* e a explosão de $\kappa(V)$.
+3. **Parte 3 — Exercício de Aplicação:**
+   - Ajuste de modelo exponencial linearizável aos dados experimentais.
 """
 
-# ╔═╡ b1000000-0000-0000-0000-000000000004
+# ╔═╡ d1000000-0000-0000-0000-000000000004
 md"""
-## 2. Geometria da Solução e Equações Normais
+---
+# Parte 1: Treino Prático de Álgebra Linear & Desempenho
 
-Geometricamente, o vetor $Ac^*$ é a **projeção ortogonal** do vetor de observações $y$ sobre o subespaço imagem $\text{Im}(A)$. Portanto, o vetor residual $r = y - Ac^*$ deve ser ortogonal a todas as colunas de $A$:
-$$A^T (y - Ac^*) = 0 \iff A^T A c^* = A^T y.$$
+## 1. Transposição de Matrizes "na Mão" e Laços `for`
 
-Este sistema quadrado $n \times n$ é denominado **Sistema das Equações Normais**. Se $A$ possui posto completo por colunas ($\text{posto}(A) = n$), a matriz $A^T A$ é simétrica e positiva definida (SPD), possuindo solução única:
-$$c^* = (A^T A)^{-1} A^T y.$$
+Dada uma matriz $A \in \mathbb{R}^{m \times n}$, a sua matriz transposta $B = A^T \in \mathbb{R}^{n \times m}$ é definida trocando linhas por colunas:
+$$B_{ji} = A_{ij}, \quad \text{para todo } i \in \{1, \ldots, m\} \text{ e } j \in \{1, \ldots, n\}.$$
+
+### Exercício Prático 1: Implementando a Transposta
+Implemente a função `minha_transposta(A)` que:
+1. Obtém as dimensões `m, n = size(A)`;
+2. Inicializa uma nova matriz de dimensões `(n, m)` preenchida com zeros do mesmo tipo dos elementos de $A$ (`zeros(eltype(A), n, m)`);
+3. Utiliza laços `for` aninhados para atribuir `B[j, i] = A[i, j]`;
+4. Retorna a matriz transposta $B$.
 """
 
-# ╔═╡ b1000000-0000-0000-0000-000000000005
-md"""
-## 3. Equações Normais vs. Fatoração QR: O Perigo Numérico
+# ╔═╡ d1000000-0000-0000-0000-000000000005
+function minha_transposta(A)
+	m, n = size(A)
+	B = zeros(eltype(A), n, m)
+	# Complete os laços for abaixo:
+	# for i in 1:m
+	#     for j in 1:n
+	#         B[j, i] = A[i, j]
+	#     end
+	# end
+	return B
+end
 
-> [!IMPORTANT] Instabilidade Numérica das Equações Normais
-> Embora analiticamente elegante, formar explicitamente $A^T A$ em computador é **numericamente desaconselhável**.
-> O número de condição de $A^T A$ é o quadrado do número de condição de $A$:
-> $$\kappa_2(A^T A) = (\kappa_2(A))^2.$$
-> Se $\kappa_2(A) \approx 10^5$, então $\kappa_2(A^T A) \approx 10^{10}$. Em aritmética `Float64` (que possui $\approx 16$ dígitos significativos), perdemos $10$ dígitos de precisão ao resolver via equações normais!
-
-### A Alternativa Estável: Fatoração QR
-Decompomos $A = QR$, onde $Q \in \mathbb{R}^{m \times n}$ possui colunas ortonormais ($Q^T Q = I_n$) e $R \in \mathbb{R}^{n \times n}$ é triangular superior não-singular:
-$$A c - y = QR c - y.$$
-Como multiplicações por matrizes ortogonais preservam a norma euclidiana, a minimização reduz-se diretamente a resolver o sistema triangular superior:
-$$R c = Q^T y.$$
-Essa abordagem trabalha diretamente com $A$, mantendo o condicionamento original $\kappa_2(R) = \kappa_2(A)$, sem elevá-lo ao quadrado!
-
-> [!TIP] Quadrados Mínimos em Julia
-> Em Julia, o operador barra invertida `A \ y` para matrizes retangulares $m > n$ **já resolve o problema de quadrados mínimos diretamente via Fatoração QR** com pivoteamento (LAPACK), sem nunca formar $A^T A$!
-"""
-
-# ╔═╡ b1000000-0000-0000-0000-000000000006
-begin
-	Random.seed!(42)
-	m_pontos = 60
-	x_amostra = range(0.0, 10.0, length=m_pontos)
+# ╔═╡ d1000000-0000-0000-0000-000000000006
+let
+	A_teste = [1.0  2.0  3.0  4.0;
+	           5.0  6.0  7.0  8.0;
+	           9.0 10.0 11.0 12.0]
 	
-	# Reta teórica: y = 2.5 * x - 1.0 + ruído N(0, σ²)
-	sigma_real = 1.8
-	y_amostra = 2.5 .* x_amostra .- 1.0 .+ sigma_real .* randn(m_pontos)
+	B_obtida = minha_transposta(A_teste)
+	B_esperada = transpose(A_teste)
 	
-	scatter(x_amostra, y_amostra, 
-		label = "Dados Experimentais Ruidosos",
-		marker = :circle, 
-		markersize = 4, 
-		color = :steelblue,
-		xlabel = "x", 
-		ylabel = "y", 
-		title = "Amostra Experimental (m = $m_pontos pontos)",
-		legend = :topleft
+	(
+		dimensoes_original = size(A_teste),
+		dimensoes_transposta = size(B_obtida),
+		confere_com_nativo = B_obtida == B_esperada
 	)
 end
 
-# ╔═╡ b1000000-0000-0000-0000-000000000007
+# ╔═╡ d1000000-0000-0000-0000-000000000007
 md"""
-## 4. Ajuste Linear Simples: $y(x) = c_1 + c_2 x$
+## 2. Memória Física: *Column-Major Order* e Localidade de Cache
 
-Para uma reta, temos as funções de base $\phi_1(x) = 1$ e $\phi_2(x) = x$. A matriz $A$ tem duas colunas:
-$$A = \begin{bmatrix} 1 & x_1 \\ 1 & x_2 \\ \vdots & \vdots \\ 1 & x_m \end{bmatrix}.$$
+Por que a ordem dos laços `for` importa quando programamos computação científica?
 
-Vamos comparar a solução via Fatoração QR (`A \ y`) com a obtida pelas Equações Normais:
+Em Julia (assim como em Fortran e MATLAB), matrizes bidimensionais são armazenadas na memória física do computador em **ordem por colunas** (*column-major order*). Já linguagens como C, C++ e Python (NumPy por padrão) utilizam ordem por linhas (*row-major order*).
+
+### O que isso significa na prática?
+Considere a matriz $2 \times 3$:
+$$A = \begin{bmatrix} 1 & 3 & 5 \\ 2 & 4 & 6 \end{bmatrix}.$$
+
+Na memória física (que é uma fita linear unidimensional de bytes), os elementos são gravados coluna após coluna:
+$$\text{RAM:} \quad [\mathbf{1}, \mathbf{2}], \quad [\mathbf{3}, \mathbf{4}], \quad [\mathbf{5}, \mathbf{6}].$$
+
+Como vimos na aula sobre representação e indexação linear:
+- `A[1]` é `1`
+- `A[2]` é `2`
+- `A[3]` é `3` (início da segunda coluna!)
+- `A[4]` é `4`
+- `vec(A)` ou `A[:]` reflete diretamente essa organização contígua da memória!
+
+### O Impacto no Cache da CPU
+Quando a CPU requisita um dado da memória RAM, ela não traz apenas um número isolado de 8 bytes; ela carrega um bloco contíguo de 64 bytes (uma **linha de cache**).
+- **Iterar por colunas** (`for j in 1:n, for i in 1:m`): acessa posições consecutivas de memória ($A_{1,j}, A_{2,j}, \dots$). A CPU aproveita os dados que já estão no cache (*cache hit*).
+- **Iterar por linhas** (`for i in 1:m, for j in 1:n`): a cada iteração pula $m$ posições na memória ($A_{i,1}, A_{i,2}, \dots$). O processador sofre constantes falhas de cache (*cache misses*), aguardando a busca na memória lenta.
+
+Vamos comprovar medindo o tempo com `@belapsed` do `BenchmarkTools` somando uma matriz $2.000 \times 2.000$:
 """
 
-# ╔═╡ b1000000-0000-0000-0000-000000000008
+# ╔═╡ d1000000-0000-0000-0000-000000000008
 let
-	A_reta = [ones(m_pontos) collect(x_amostra)]
-	b_reta = y_amostra
+	# Iterando primeiro por colunas (amigável à memória em Julia):
+	function soma_por_colunas(A)
+		m, n = size(A)
+		s = 0.0
+		for j in 1:n
+			for i in 1:m
+				s += A[i, j]
+			end
+		end
+		return s
+	end
+
+	# Iterando primeiro por linhas (desfavorável à ordem em Julia):
+	function soma_por_linhas(A)
+		m, n = size(A)
+		s = 0.0
+		for i in 1:m
+			for j in 1:n
+				s += A[i, j]
+			end
+		end
+		return s
+	end
+
+	M = rand(2000, 2000)
 	
-	# 1. Via QR nativo (recomendado):
-	c_qr = A_reta \ b_reta
+	t_colunas = @belapsed soma_por_colunas($M)
+	t_linhas  = @belapsed soma_por_linhas($M)
 	
-	# 2. Via Equações Normais (AᵀA c = Aᵀb):
-	c_normais = (A_reta' * A_reta) \ (A_reta' * b_reta)
+	(
+		tempo_colunas_ms = t_colunas * 1000,
+		tempo_linhas_ms  = t_linhas * 1000,
+		fator_aceleracao = t_linhas / t_colunas,
+		conclusao = "Percorrer colunas é mais rápido porque respeita a contiguidade física dos dados na RAM!"
+	)
+end
+
+# ╔═╡ d1000000-0000-0000-0000-000000000009
+md"""
+## 3. Matrizes Estruturadas com `LinearAlgebra`: O Caso Tridiagonal
+
+Em problemas reais de engenharia e modelagem (como equações diferenciais, difusão de calor e vigas), matrizes de grande porte frequentemente possuem estrutura esparsa. Um dos casos mais comuns é a **matriz tridiagonal**:
+$$T = \begin{bmatrix} d_1 & du_1 & & & \\ dl_1 & d_2 & du_2 & & \\ & dl_2 & \ddots & \ddots & \\ & & \ddots & d_{N-1} & du_{N-1} \\ & & & dl_{N-1} & d_N \end{bmatrix}.$$
+
+Se $N = 100.000$, armazenar essa matriz como matriz cheia densa (`Matrix{Float64}`) exigiria:
+$$100.000 \times 100.000 \times 8\text{ bytes} \approx 80\text{ GB de memória RAM!}$$
+Além disso, resolver $T x = b$ com eliminação gaussiana densa gastaria $\mathcal{O}(N^3) \approx 10^{15}$ operações de ponto flutuante.
+
+O pacote `LinearAlgebra` possui o tipo nativo `Tridiagonal(dl, d, du)` (ou `SymTridiagonal(d, du)` para matrizes simétricas), que armazena apenas os $3$ vetores da diagonal:
+- Memória total: $\approx 3 \times 100.000 \times 8\text{ bytes} \approx 2{,}4\text{ MB}$!
+- O operador `\` detecta o tipo e aciona automaticamente o **Algoritmo de Thomas**, resolvendo o sistema em tempo linear $\mathcal{O}(N)$!
+"""
+
+# ╔═╡ d1000000-0000-0000-0000-000000000010
+let
+	N = 50_000
+	d  = 2.0 * ones(N)
+	dl = -1.0 * ones(N - 1)
+	du = -1.0 * ones(N - 1)
+	b = rand(N)
 	
-	# 3. Via Decomposição QR explícita:
-	fat_qr = qr(A_reta)
-	c_qr_exp = fat_qr \ b_reta
+	# Criando a representação estruturada do LinearAlgebra:
+	T = SymTridiagonal(d, du)
 	
-	residuos = b_reta - A_reta * c_qr
-	norma_res = norm(residuos)
-	rmse = sqrt(norma_res^2 / m_pontos)
+	# Medindo o tempo de resolução O(N):
+	tempo_resolucao = @belapsed $T \ $b
+	x_sol = T \ b
+	res_norm = norm(T * x_sol - b)
 	
-	y_medio  = mean(b_reta)
-	sq_total = sum((b_reta .- y_medio).^2)
-	sq_res   = sum(residuos.^2)
-	r2       = 1.0 - sq_res / sq_total
+	(
+		dimensao = N,
+		memoria_armazenamento_MB = (sizeof(d) + 2 * sizeof(du)) / (1024^2),
+		tempo_resolucao_ms = tempo_resolucao * 1000,
+		norma_do_residuo = res_norm,
+		complexidade = "O(N) operações lineares!"
+	)
+end
+
+# ╔═╡ d1000000-0000-0000-0000-000000000011
+md"""
+## 4. Fatoração LU no Pacote `LinearAlgebra`
+
+Como computadores resolvem sistemas lineares quadrados $A x = b$? 
+Vimos na aula passada que **nunca calculamos a matriz inversa $A^{-1}$**. A biblioteca `LinearAlgebra` implementa a decomposição LU com pivoteamento parcial:
+$$P A = L U,$$
+onde:
+- $P$ é uma matriz de permutação que reflete a troca de linhas (essencial para evitar divisões por zero ou números muito pequenos, garantindo estabilidade numérica);
+- $L$ é uma matriz triangular inferior unitária (diagonal com $1$s);
+- $U$ é uma matriz triangular superior.
+
+### O Objeto `LU` retornado por `lu(A)`
+Quando chamamos `F = lu(A)`, Julia não retorna apenas uma matriz, mas uma estrutura especializada de fatoração contendo:
+- `F.L`: o fator triangular inferior;
+- `F.U`: o fator triangular superior;
+- `F.p`: o vetor com os índices de permutação das linhas;
+- `F.P`: a matriz de permutação correspondente.
+
+### Resolução em Duas Etapas Triangulares
+Com $P A = L U$, o sistema $A x = b$ se torna:
+$$L (U x) = P b.$$
+Definindo $y = U x$, o sistema é resolvido em dois passos extremamente rápidos (ambos $\mathcal{O}(n^2)$):
+1. **Substituição Direta:** Resolve $L y = P b$ $\implies$ em Julia: `y = F.L \ (F.P * b)` ou `y = F.L \ b[F.p]`;
+2. **Substituição Retroativa:** Resolve $U x = y$ $\implies$ em Julia: `x = F.U \ y`.
+
+Alternativamente, podemos aplicar diretamente `F \ b`, que utiliza a fatoração pré-calculada!
+"""
+
+# ╔═╡ d1000000-0000-0000-0000-000000000012
+let
+	A = [2.0  1.0  1.0;
+	     4.0 -6.0  0.0;
+	    -2.0  7.0  2.0]
+	b = [5.0, -2.0, 9.0]
+	
+	# Fatoração LU:
+	F = lu(A)
+	
+	# 1. Conferir que P * A == L * U
+	erro_fatoracao = norm(F.P * A - F.L * F.U, Inf)
+	
+	# 2. Resolução em dois passos usando as matrizes triangulares nativas:
+	y = F.L \ (F.P * b)
+	x_passos = F.U \ y
+	
+	# 3. Resolução direta com o objeto Fatoração:
+	x_fatoracao = F \ b
+	
+	# 4. Comparação com o operador A \ b:
+	x_nativo = A \ b
+	
+	(
+		L = F.L,
+		U = F.U,
+		permutacao_p = F.p,
+		erro_decomposicao_PA_LU = erro_fatoracao,
+		solucao_dois_passos = x_passos,
+		solucao_F_barra_b = x_fatoracao,
+		solucao_A_barra_b = x_nativo,
+		sao_identicas = x_passos ≈ x_fatoracao ≈ x_nativo
+	)
+end
+
+# ╔═╡ d1000000-0000-0000-0000-000000000013
+md"""
+### A Grande Vantagem da Fatoração LU: Múltiplos Lados Direitos
+
+Imagine um problema de simulação estrutural ou evolução temporal onde a matriz $A$ do sistema físico permanece a mesma, mas o vetor de forças ou estímulos $b$ muda para $K = 500$ cenários diferentes ($b_1, b_2, \ldots, b_K$).
+
+- **Abordagem Ingênua:** Calcular `A \ b_k` para cada $k$. Isso refaz a eliminação gaussiana $K$ vezes:
+$$\text{Custo} \approx K \times \frac{2}{3} n^3.$$
+- **Abordagem Eficiente:** Calcular `F = lu(A)` uma **única vez** e reutilizar os fatores triangulares para cada $b_k$:
+$$\text{Custo} \approx \frac{2}{3} n^3 + K \times (2 n^2).$$
+
+Vejamos a comparação de tempo para uma matriz $500 \times 500$ e $K = 100$ vetores:
+"""
+
+# ╔═╡ d1000000-0000-0000-0000-000000000014
+let
+	Random.seed!(42)
+	n_dim = 400
+	K_cenarios = 80
+	A_sim = randn(n_dim, n_dim) + 5.0 * I
+	B_cenarios = [randn(n_dim) for _ in 1:K_cenarios]
+	
+	# Abordagem 1: Refazendo eliminação a cada chamada A \ b
+	function resolver_sem_fatorar(A, lista_b)
+		return [A \ b for b in lista_b]
+	end
+	
+	# Abordagem 2: Fatorando uma única vez e resolvendo F \ b
+	function resolver_com_fatoracao(A, lista_b)
+		F = lu(A)
+		return [F \ b for b in lista_b]
+	end
+	
+	t_sem = @belapsed resolver_sem_fatorar($A_sim, $B_cenarios)
+	t_com = @belapsed resolver_com_fatoracao($A_sim, $B_cenarios)
+	
+	(
+		tempo_sem_fatorar_ms = t_sem * 1000,
+		tempo_com_fatorar_ms = t_com * 1000,
+		fator_ganho = t_sem / t_com,
+		licao = "Fatorar uma única vez economiza enorme tempo quando a matriz é constante e os dados variam!"
+	)
+end
+
+# ╔═╡ d1000000-0000-0000-0000-000000000015
+md"""
+---
+# Parte 2: A Ponte para Sistemas Sobredeterminados (Quadrados Mínimos)
+
+## 5. O Problema de Quadrados Mínimos Linear
+
+Até agora, tratamos de sistemas quadrados $A x = b$ ($n \times n$), onde existe solução exata única quando $\det(A) \neq 0$.
+
+No entanto, no mundo real da experimentação, estatística e aprendizado de máquina, temos **muito mais medições do que parâmetros desconhecidos**:
+$$m > n, \quad A \in \mathbb{R}^{m \times n}, \quad b \in \mathbb{R}^m.$$
+
+Devido a ruídos de medição e erros experimentais, o vetor $b$ geralmente **não pertence ao espaço coluna de $A$** ($b \notin \mathcal{C}(A)$). Logo, o sistema linear:
+$$A x \approx b$$
+**não possui solução exata**. Para qualquer vetor $x$, haverá um resíduo não-nulo:
+$$r(x) = b - A x \neq \mathbf{0}.$$
+
+### A Meta dos Quadrados Mínimos
+Buscamos encontrar o vetor $\hat{x} \in \mathbb{R}^n$ que minimize a norma euclidiana ao quadrado do vetor resíduo:
+$$\min_{x \in \mathbb{R}^n} f(x) = \|A x - b\|_2^2 = \sum_{i=1}^m (b_i - [A x]_i)^2.$$
+
+Geometricamente, o vetor $A \hat{x}$ é a **projeção ortogonal** de $b$ sobre o subespaço coluna $\mathcal{C}(A)$. Portanto, o resíduo $r = b - A \hat{x}$ deve ser ortogonal a todas as colunas de $A$:
+$$A^T (b - A \hat{x}) = \mathbf{0} \implies A^T A \hat{x} = A^T b.$$
+"""
+
+# ╔═╡ d1000000-0000-0000-0000-000000000016
+md"""
+### Equações Normais vs. Fatoração QR no `LinearAlgebra`
+
+Existem duas formas principais de computar $\hat{x}$:
+
+1. **Equações Normais:**
+   Resolve o sistema simétrico definido positivo $(A^T A) \hat{x} = A^T b$ (por exemplo, via Fatoração de Cholesky).
+   > [!WARNING] Cuidado com o Condicionamento!
+   > O número de condição da matriz das equações normais é o quadrado do número de condição de $A$:
+   > $$\kappa_2(A^T A) = (\kappa_2(A))^2.$$
+   > Se $A$ tiver $\kappa_2(A) \approx 10^5$, a matriz $A^T A$ terá $\kappa_2 \approx 10^{10}$, o que pode destruir metade dos dígitos de precisão da resposta!
+
+2. **Fatoração QR / Operador Nativo `A \ b`:**
+   Decompõe $A = Q R$, onde $Q \in \mathbb{R}^{m \times n}$ possui colunas ortonormais ($Q^T Q = I$) e $R \in \mathbb{R}^{n \times n}$ é triangular superior:
+   $$A^T A \hat{x} = A^T b \implies R^T Q^T Q R \hat{x} = R^T Q^T b \implies R \hat{x} = Q^T b.$$
+   - Como $R$ é triangular superior, basta uma substituição retroativa!
+   - O condicionamento de $R$ é exatamente $\kappa_2(R) = \kappa_2(A)$, preservando os dígitos significativos.
+   - Em Julia, quando $A$ é retangular com $m > n$, o operador nativo `A \ b` utiliza automaticamente rotinas LAPACK baseadas em **Fatoração QR** (`dgels`), garantindo máxima estabilidade numérica!
+"""
+
+# ╔═╡ d1000000-0000-0000-0000-000000000017
+begin
+	# Dados experimentais simulados:
+	Random.seed!(2026)
+	m_pts = 30
+	x_dados = range(0.5, 5.0, length=m_pts) |> collect
+	ruido = 0.8 * randn(m_pts)
+	# Modelo real subjacente: y = 2.5 * x + 1.2 + ruido
+	y_dados = 2.5 .* x_dados .+ 1.2 .+ ruido
+	
+	scatter(x_dados, y_dados, label="Dados Experimentais (com ruído)", 
+	        color=:steelblue, markersize=5, legend=:topleft,
+	        xlabel="Variável Independente (x)", ylabel="Resposta Medida (y)",
+	        title="Conjunto de Dados Experimentais (m = $m_pts pontos)")
+end
+
+# ╔═╡ d1000000-0000-0000-0000-000000000018
+md"""
+## 6. Ajuste de Reta ($y = c_0 + c_1 x$)
+
+Queremos ajustar o modelo linear $y \approx c_0 + c_1 x$ aos $m$ pontos $(x_i, y_i)$.
+Escrevendo na forma matricial:
+$$\begin{bmatrix} 1 & x_1 \\ 1 & x_2 \\ \vdots & \vdots \\ 1 & x_m \end{bmatrix} \begin{bmatrix} c_0 \\ c_1 \end{bmatrix} \approx \begin{bmatrix} y_1 \\ y_2 \\ \vdots \\ y_m \end{bmatrix} \implies A c \approx y.$$
+"""
+
+# ╔═╡ d1000000-0000-0000-0000-000000000019
+let
+	# Montando a matriz do modelo: primeira coluna de 1s, segunda de x_dados
+	A_reta = [ones(length(x_dados)) x_dados]
+	
+	# Resolução via Operador Nativo QR:
+	c_qr = A_reta \ y_dados
+	
+	# Resolução via Equações Normais:
+	c_norm = (A_reta' * A_reta) \ (A_reta' * y_dados)
+	
+	# Resíduo e RMSE:
+	y_estimado = A_reta * c_qr
+	residuos = y_dados - y_estimado
+	rmse = sqrt(mean(residuos.^2))
 	
 	(
 		coeficientes_QR = c_qr,
-		coeficientes_Normais = c_normais,
-		diferenca_metodos = norm(c_qr - c_normais),
-		RMSE = rmse,
-		R2 = r2,
+		coeficientes_EqNormais = c_norm,
+		intercepto_c0 = c_qr[1],
+		inclinacao_c1 = c_qr[2],
+		rmse = rmse,
 		cond_A = cond(A_reta),
 		cond_AtA = cond(A_reta' * A_reta)
 	)
 end
 
-# ╔═╡ b1000000-0000-0000-0000-000000000009
+# ╔═╡ d1000000-0000-0000-0000-000000000020
 let
-	A_reta = [ones(m_pontos) collect(x_amostra)]
-	c_est = A_reta \ y_amostra
-	reta_modelo(x) = c_est[1] + c_est[2] * x
+	A_reta = [ones(length(x_dados)) x_dados]
+	c_reta = A_reta \ y_dados
 	
-	p = scatter(x_amostra, y_amostra, label="Dados Experimentais", marker=:circle, markersize=4, color=:steelblue)
-	plot!(p, reta_modelo, 0.0, 10.0, label="Ajuste Linear (QR): y = $(round(c_est[2], digits=2))x $(round(c_est[1], digits=2))", color=:crimson, lw=2.5)
-	plot!(p, x -> 2.5x - 1.0, 0.0, 10.0, label="Reta Real Teórica: y = 2.5x - 1.0", color=:black, linestyle=:dash, lw=1.5)
-	title!(p, "Ajuste Linear por Quadrados Mínimos")
+	p = scatter(x_dados, y_dados, label="Pontos Experimentais", color=:steelblue, markersize=5)
+	plot!(p, x -> c_reta[1] + c_reta[2] * x, 0.5, 5.0, 
+	      label="Reta de Ajuste: y = $(round(c_reta[1], digits=2)) + $(round(c_reta[2], digits=2))x", 
+	      lw=2.5, color=:crimson, legend=:topleft)
+	xlabel!(p, "x")
+	ylabel!(p, "y")
+	title!(p, "Regressão Linear por Quadrados Mínimos")
 	p
 end
 
-# ╔═╡ b1000000-0000-0000-0000-000000000010
+# ╔═╡ d1000000-0000-0000-0000-000000000021
 md"""
-## 5. Ajuste Polinomial e a Matriz de Vandermonde
+## 7. Ajuste Polinomial Geral e a Matriz de Vandermonde
 
-Podemos estender o modelo para qualquer grau polinomial $d$:
-$$y(x) \approx c_1 + c_2 x + c_3 x^2 + \cdots + c_{d+1} x^d.$$
-A matriz $A$ correspondente é a conhecida **Matriz de Vandermonde**:
-$$V = \begin{bmatrix} 1 & x_i & x_i^2 & \cdots & x_i^d \end{bmatrix}_{i=1}^m.$$
+E se os dados tiverem comportamento não linear? Podemos ajustar um polinômio de grau $d$:
+$$p(x) = c_0 + c_1 x + c_2 x^2 + \cdots + c_d x^d.$$
+O sistema linear correspondente envolve a **Matriz de Vandermonde**:
+$$V = \begin{bmatrix} 1 & x_1 & x_1^2 & \cdots & x_1^d \\ 1 & x_2 & x_2^2 & \cdots & x_2^d \\ \vdots & \vdots & \vdots & \ddots & \vdots \\ 1 & x_m & x_m^2 & \cdots & x_m^d \end{bmatrix}.$$
 
-Vamos gerar dados de uma curva não-linear $y = 2.0 - 2.5x + 1.2x^2 - 0.15x^3 + \epsilon$ e comparar os ajustes de graus $d = 1$ (reta), $d = 2$ (parábola) e $d = 3$ (cúbica):
+Em Julia, podemos construir essa matriz de forma vetorizada com:
+```julia
+V = x .^ (0:d)'
+```
 """
 
-# ╔═╡ b1000000-0000-0000-0000-000000000011
+# ╔═╡ d1000000-0000-0000-0000-000000000022
+md"""
+## 8. Laboratório Interativo: Subajuste, Sobreajuste e Condicionamento
+
+Use os controles interativos abaixo para investigar:
+1. **Grau muito baixo ($d=1$):** Subajuste (*underfitting*), alto erro de modelagem.
+2. **Grau ideal ($d=2$ ou $3$):** Captura a curvatura real dos dados sem seguir ruídos.
+3. **Grau muito alto ($d \geq 8$):** Sobreajuste (*overfitting*), oscilações selvagens nas bordas e explosão de $\kappa(V)$!
+"""
+
+# ╔═╡ d1000000-0000-0000-0000-000000000023
+@bind grau_poli Slider(1:10, default=2, show_value=true)
+
+# ╔═╡ d1000000-0000-0000-0000-000000000024
+@bind nivel_ruido Slider(0.0:0.1:1.5, default=0.5, show_value=true)
+
+# ╔═╡ d1000000-0000-0000-0000-000000000025
 begin
+	# Gera dados quadráticos ruidosos com o ruído selecionado:
 	Random.seed!(99)
-	m_poli = 80
-	x_curva = range(0.0, 5.0, length=m_poli)
-	y_teorico = 2.0 .- 2.5 .* x_curva .+ 1.2 .* (x_curva.^2) .- 0.15 .* (x_curva.^3)
-	y_curva = y_teorico .+ 0.8 .* randn(m_poli)
+	m_lab = 35
+	x_lab = range(0.0, 4.0, length=m_lab) |> collect
+	y_exato = 1.0 .- 1.5 .* x_lab .+ 0.8 .* (x_lab .^ 2)
+	y_lab = y_exato .+ nivel_ruido .* randn(m_lab)
 	
-	V1 = [ones(m_poli) collect(x_curva)]
-	V2 = [ones(m_poli) collect(x_curva) collect(x_curva.^2)]
-	V3 = [ones(m_poli) collect(x_curva) collect(x_curva.^2) collect(x_curva.^3)]
+	# Matriz de Vandermonde:
+	V_lab = x_lab .^ (0:grau_poli)'
+	c_poli = V_lab \ y_lab
 	
-	c1 = V1 \ y_curva
-	c2 = V2 \ y_curva
-	c3 = V3 \ y_curva
+	# Polinômio ajustado:
+	f_poli(x) = sum(c_poli[k] * x^(k - 1) for k in 1:length(c_poli))
 	
-	f_reta(x)     = c1[1] + c1[2]*x
-	f_parabola(x) = c2[1] + c2[2]*x + c2[3]*x^2
-	f_cubica(x)   = c3[1] + c3[2]*x + c3[3]*x^2 + c3[4]*x^3
+	# Avaliação:
+	y_prev = [f_poli(xi) for xi in x_lab]
+	rmse_lab = sqrt(mean((y_lab .- y_prev).^2))
+	cond_V = cond(V_lab)
 	
-	p_poli = scatter(x_curva, y_curva, label="Dados Ruidosos", markersize=3.5, color=:gray, alpha=0.7)
-	plot!(p_poli, f_reta, 0.0, 5.0, label="Grau 1 (Reta)", color=:blue, lw=2)
-	plot!(p_poli, f_parabola, 0.0, 5.0, label="Grau 2 (Parábola)", color=:orange, lw=2)
-	plot!(p_poli, f_cubica, 0.0, 5.0, label="Grau 3 (Cúbica)", color=:crimson, lw=2.5)
-	plot!(p_poli, x -> 2.0 - 2.5x + 1.2x^2 - 0.15x^3, 0.0, 5.0, label="Curva Real Teórica", color=:black, linestyle=:dash, lw=1.5)
-	title!(p_poli, "Comparação de Modelos Polinomiais")
-	p_poli
-end
-
-# ╔═╡ b1000000-0000-0000-0000-000000000012
-let
-	avalia_modelo(V, y, c) = begin
-		res = y - V * c
-		rmse = sqrt(sum(res.^2) / length(y))
-		r2 = 1.0 - sum(res.^2) / sum((y .- mean(y)).^2)
-		cond_num = cond(V)
-		(RMSE = round(rmse, digits=4), R2 = round(r2, digits=4), cond_V = round(cond_num, digits=1))
-	end
-	
-	(
-		Grau_1 = avalia_modelo(V1, y_curva, c1),
-		Grau_2 = avalia_modelo(V2, y_curva, c2),
-		Grau_3 = avalia_modelo(V3, y_curva, c3)
-	)
-end
-
-# ╔═╡ b1000000-0000-0000-0000-000000000013
-md"""
-## 6. Laboratório Interativo: *Overfitting* e Condicionamento
-
-O que acontece se aumentarmos o grau do polinômio para $d = 8$ ou $10$?
-- **Subajuste (*Underfitting*):** Para $d = 1$, o modelo é simples demais e não captura a curvatura real dos dados (alto viés).
-- **Ajuste Ótimo:** Para $d = 3$, o modelo captura perfeitamente a física geradora com baixo erro e boa generalização.
-- **Sobreajuste (*Overfitting*):** Para graus elevados ($d \geq 6$), o polinômio passa a interpolar os ruídos amostrais, exibindo oscilações descontroladas nas bordas (efeito Runge) e $\kappa(V)$ explode para valores superiores a $10^{10}$!
-
-Experimente ajustar os parâmetros abaixo e observe o comportamento da curva e o número de condição $\kappa(V)$:
-"""
-
-# ╔═╡ b1000000-0000-0000-0000-000000000014
-@bind grau_poli Slider(1:8, default=3, show_value=true)
-
-# ╔═╡ b1000000-0000-0000-0000-000000000015
-@bind nivel_ruido Slider(0.1:0.1:2.0, default=0.8, show_value=true)
-
-# ╔═╡ b1000000-0000-0000-0000-000000000016
-let
-	Random.seed!(42)
-	m_lab = 50
-	x_lab = range(0.0, 5.0, length=m_lab)
-	y_lab = 2.0 .- 2.5 .* x_lab .+ 1.2 .* (x_lab.^2) .- 0.15 .* (x_lab.^3) .+ nivel_ruido .* randn(m_lab)
-	
-	V_lab = hcat([collect(x_lab).^i for i in 0:grau_poli]...)
-	c_lab = V_lab \ y_lab
-	
-	f_lab(x) = sum(c_lab[i+1] * x^i for i in 0:grau_poli)
-	
-	res_lab = y_lab - V_lab * c_lab
-	rmse_lab = sqrt(sum(res_lab.^2) / m_lab)
-	cond_lab = cond(V_lab)
-	
-	p = scatter(x_lab, y_lab, label="Dados (ruído = $nivel_ruido)", markersize=4, color=:steelblue, alpha=0.8)
-	plot!(p, f_lab, 0.0, 5.0, label="Polinômio Grau $grau_poli", color=:crimson, lw=2.5)
-	ylims!(p, -5, 15)
-	title!(p, "Grau: $grau_poli | RMSE: $(round(rmse_lab, digits=3)) | cond(V): $(round(cond_lab, sigdigits=3))")
+	p = scatter(x_lab, y_lab, label="Dados (ruído = $nivel_ruido)", markersize=5, color=:steelblue, alpha=0.8)
+	plot!(p, x -> 1.0 - 1.5*x + 0.8*x^2, 0.0, 4.0, label="Curva Real Geradora", color=:darkgreen, ls=:dash, lw=2)
+	plot!(p, f_poli, 0.0, 4.0, label="Ajuste Polinomial (Grau $grau_poli)", color=:crimson, lw=2.5)
+	ylims!(p, -4, 15)
+	title!(p, "Grau: $grau_poli | RMSE: $(round(rmse_lab, digits=3)) | cond(V): $(round(cond_V, sigdigits=3))")
+	xlabel!(p, "x")
+	ylabel!(p, "y")
 	p
 end
 
-# ╔═╡ b1000000-0000-0000-0000-000000000017
+# ╔═╡ d1000000-0000-0000-0000-000000000026
 md"""
 ---
-## 7. Desafios Práticos da Semana
+# Parte 3: Exercício de Aplicação
 
-### Desafio 1: Ajuste Exponencial Linearizável
-Considere um processo físico de decaimento radiativo modelado por:
-$$y(t) = C \, e^{k t}, \quad C > 0, \quad k < 0.$$
-Aplicando o logaritmo natural em ambos os lados, obtemos a relação linear:
+### Desafio: Ajuste de Modelo Exponencial Linearizável via `LinearAlgebra`
+
+Muitos fenômenos na física, química e biologia seguem leis exponenciais de crescimento ou decaimento radiativo:
+$$y(t) = C e^{k t}, \quad \text{com } C > 0.$$
+
+Este modelo não é linear nos parâmetros $C$ e $k$, mas pode ser **linearizado** aplicando o logaritmo natural em ambos os lados:
 $$\ln(y) = \ln(C) + k t.$$
-Definindo $z = \ln(y)$, $a_0 = \ln(C)$ e $a_1 = k$, recaímos no sistema linear:
-$$\begin{bmatrix} 1 & t_1 \\ 1 & t_2 \\ \vdots & \vdots \\ 1 & t_m \end{bmatrix} \begin{bmatrix} a_0 \\ a_1 \end{bmatrix} \approx \begin{bmatrix} \ln(y_1) \\ \ln(y_2) \\ \vdots \\ \ln(y_m) \end{bmatrix}.$$
+
+Definindo as novas variáveis $z = \ln(y)$ e $a_0 = \ln(C)$, $a_1 = k$, obtemos a equação linear:
+$$z = a_0 + a_1 t.$$
+
+Para um conjunto de $m$ medições $(t_i, y_i)$, montamos o sistema linear sobredeterminado:
+$$\begin{bmatrix} 1 & t_1 \\ 1 & t_2 \\ \vdots & \vdots \\ 1 & t_m \end{bmatrix} \begin{bmatrix} a_0 \\ a_1 \end{bmatrix} \approx \begin{bmatrix} \ln(y_1) \\ \ln(y_2) \\ \vdots \\ \ln(y_m) \end{bmatrix} \implies A a \approx z.$$
 
 **Sua tarefa:**
-1. A partir dos dados simulados em `t_amostra` e `y_amostra_exp`, monte o sistema transformado e resolva com a Fatoração QR (`A \ z`);
-2. Obtenha os parâmetros estimados $\hat{k} = a_1$ e $\hat{C} = e^{a_0}$;
-3. Calcule o erro quadrático médio nos dados originais $RMSE = \sqrt{\frac{1}{m}\sum_{i=1}^m (y_i - \hat{C} e^{\hat{k} t_i})^2}$;
-4. Plote os dados originais e a curva exponencial ajustada.
+1. A partir dos dados simulados em `t_exp` e `y_exp`, monte o vetor $z = \ln(y)$ e a matriz $A = [\mathbf{1} \quad t]$;
+2. Resolva o sistema linearizado com o operador nativo do `LinearAlgebra` (`A \ z`);
+3. Recupere os parâmetros físicos: $\hat{C} = e^{a_0}$ e $\hat{k} = a_1$;
+4. Calcule o erro quadrático médio $RMSE = \sqrt{\frac{1}{m}\sum_{i=1}^m (y_i - \hat{C} e^{\hat{k} t_i})^2}$ na escala original;
+5. Plote os dados experimentais e a curva ajustada.
 """
 
-# ╔═╡ b1000000-0000-0000-0000-000000000018
+# ╔═╡ d1000000-0000-0000-0000-000000000027
 begin
-	# Dados fornecidos para o Desafio 1:
+	# Dados experimentais do desafio:
 	Random.seed!(101)
-	m_exp = 40
-	t_amostra = range(0.0, 4.0, length=m_exp)
-	# Parâmetros reais geradores: C = 5.0, k = -0.8
-	y_amostra_exp = 5.0 .* exp.(-0.8 .* t_amostra) .* exp.(0.1 .* randn(m_exp))
+	m_pts_exp = 30
+	t_exp = range(0.0, 3.5, length=m_pts_exp) |> collect
+	# Decaimento real: y(t) = 8.0 * exp(-0.75 * t) + ruído multiplicativo
+	y_exp = 8.0 .* exp.(-0.75 .* t_exp) .* exp.(0.08 .* randn(m_pts_exp))
 	
-	# Complete a resolução:
-	# z_exp = log.(y_amostra_exp)
-	# A_exp = [ones(m_exp) collect(t_amostra)]
-	# coefs_exp = ...
-	# C_estimado = exp(coefs_exp[1])
-	# k_estimado = coefs_exp[2]
-end
-
-# ╔═╡ b1000000-0000-0000-0000-000000000019
-md"""
-### Desafio 2: Comparação de Estabilidade — Equações Normais vs. QR
-Considere a matriz de Vandermonde $A$ construída a partir de $m = 30$ pontos equiespaçados no intervalo estreito $x \in [1.0, 1.2]$ para um polinômio de grau $d = 5$:
-$$A = \begin{bmatrix} 1 & x & x^2 & x^3 & x^4 & x^5 \end{bmatrix}.$$
-Defina os coeficientes exatos $c_{\text{exato}} = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]^T$ e o vetor $b = A c_{\text{exato}}$.
-
-**Sua tarefa:**
-1. Calcule os números de condição $\kappa(A)$ e $\kappa(A^T A)$;
-2. Resolva o sistema via Fatoração QR: `c_qr = A \ b`;
-3. Resolva o sistema via Equações Normais: `c_normais = (A' * A) \ (A' * b)`;
-4. Compare os erros relativos $\|c_{\text{qr}} - c_{\text{exato}}\| / \|c_{\text{exato}}\|$ e $\|c_{\text{normais}} - c_{\text{exato}}\| / \|c_{\text{exato}}\|$.
-"""
-
-# ╔═╡ b1000000-0000-0000-0000-000000000020
-begin
-	# Espaço para o estudante resolver o Desafio 2
-	x_estreito = range(1.0, 1.2, length=30)
-	A_vander = hcat([collect(x_estreito).^i for i in 0:5]...)
-	c_exato = ones(6)
-	b_sem_ruido = A_vander * c_exato
+	# --- Espaço para o estudante completar ---
+	# 1. Linearização:
+	# z = log.(y_exp)
+	# A = [ones(m_pts_exp) t_exp]
 	
-	# Complete a resolução:
-	# cond_A = cond(A_vander)
-	# cond_AtA = cond(A_vander' * A_vander)
-	# c_qr = ...
-	# c_normais = ...
+	# 2. Resolução do sistema:
+	# coefs = A \ z
+	
+	# 3. Recuperação dos parâmetros:
+	# C_est = exp(coefs[1])
+	# k_est = coefs[2]
+	
+	# 4. Plote a curva ajustada sobre scatter(t_exp, y_exp)
 end
 
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+BenchmarkTools = "6e4b3a7d-e066-5cb1-a861-ddc4d72f0863"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-Statistics = "10745b16-79ce-11f0-218a-93be9f63567d"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
+BenchmarkTools = "~1.6.0"
 Plots = "~1.41.7"
 PlutoUI = "~0.7.83"
 """
@@ -2044,28 +2265,55 @@ version = "1.13.0+0"
 
 [registries.General]
 url = "https://github.com/JuliaRegistries/General.git"
-uuid = "23338594-aafe-5451-b93e-139f81909106""""
+uuid = "23338594-aafe-5451-b93e-139f81909106"
+
+[[deps.BenchmarkTools]]
+deps = ["JSON", "Logging", "Printf", "Profile", "Random", "Serialization", "Statistics"]
+git-tree-sha1 = "e38f9241b661d79712a32c1eb728f4bcbaeb1fe6"
+registries = "General"
+uuid = "6e4b3a7d-e066-5cb1-a861-ddc4d72f0863"
+version = "1.6.0"
+
+[[deps.JSON]]
+deps = ["Dates", "Decimal", "Mmap", "Parsers", "Unicode"]
+git-tree-sha1 = "31e996f0a15c7b28043741a74d186f6a525c5d15"
+registries = "General"
+uuid = "682c0667-e4f8-5296-ac5e-59d73737373a"
+version = "0.21.4"
+
+[[deps.Decimal]]
+git-tree-sha1 = "c0dd6e61f0340eb9cd7573d09e51c6b12a868417"
+registries = "General"
+uuid = "da6a47a2-f81d-5369-b7b5-276f578740f9"
+version = "0.4.2""""
 
 # ╔═╡ Cell order:
-# ╟─b1000000-0000-0000-0000-000000000001
-# ╠═b1000000-0000-0000-0000-000000000002
-# ╟─b1000000-0000-0000-0000-000000000003
-# ╟─b1000000-0000-0000-0000-000000000004
-# ╟─b1000000-0000-0000-0000-000000000005
-# ╠═b1000000-0000-0000-0000-000000000006
-# ╟─b1000000-0000-0000-0000-000000000007
-# ╠═b1000000-0000-0000-0000-000000000008
-# ╠═b1000000-0000-0000-0000-000000000009
-# ╟─b1000000-0000-0000-0000-000000000010
-# ╠═b1000000-0000-0000-0000-000000000011
-# ╠═b1000000-0000-0000-0000-000000000012
-# ╟─b1000000-0000-0000-0000-000000000013
-# ╠═b1000000-0000-0000-0000-000000000014
-# ╠═b1000000-0000-0000-0000-000000000015
-# ╠═b1000000-0000-0000-0000-000000000016
-# ╟─b1000000-0000-0000-0000-000000000017
-# ╠═b1000000-0000-0000-0000-000000000018
-# ╟─b1000000-0000-0000-0000-000000000019
-# ╠═b1000000-0000-0000-0000-000000000020
+# ╟─d1000000-0000-0000-0000-000000000001
+# ╠═d1000000-0000-0000-0000-000000000002
+# ╟─d1000000-0000-0000-0000-000000000003
+# ╟─d1000000-0000-0000-0000-000000000004
+# ╠═d1000000-0000-0000-0000-000000000005
+# ╠═d1000000-0000-0000-0000-000000000006
+# ╟─d1000000-0000-0000-0000-000000000007
+# ╠═d1000000-0000-0000-0000-000000000008
+# ╟─d1000000-0000-0000-0000-000000000009
+# ╠═d1000000-0000-0000-0000-000000000010
+# ╟─d1000000-0000-0000-0000-000000000011
+# ╠═d1000000-0000-0000-0000-000000000012
+# ╟─d1000000-0000-0000-0000-000000000013
+# ╠═d1000000-0000-0000-0000-000000000014
+# ╟─d1000000-0000-0000-0000-000000000015
+# ╟─d1000000-0000-0000-0000-000000000016
+# ╠═d1000000-0000-0000-0000-000000000017
+# ╟─d1000000-0000-0000-0000-000000000018
+# ╠═d1000000-0000-0000-0000-000000000019
+# ╠═d1000000-0000-0000-0000-000000000020
+# ╟─d1000000-0000-0000-0000-000000000021
+# ╟─d1000000-0000-0000-0000-000000000022
+# ╠═d1000000-0000-0000-0000-000000000023
+# ╠═d1000000-0000-0000-0000-000000000024
+# ╠═d1000000-0000-0000-0000-000000000025
+# ╟─d1000000-0000-0000-0000-000000000026
+# ╠═d1000000-0000-0000-0000-000000000027
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
