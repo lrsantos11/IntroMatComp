@@ -41,9 +41,6 @@ md"""
 Na aula anterior, revisamos conceitos de vetores, matrizes e normas. Hoje estruturamos nossa aula em duas partes complementares:
 
 1. **Parte 1 — Treino Prático de Álgebra Linear & Desempenho:**
-   - **Transposição de matrizes "na mão"** com laços `for` (relembrando indexação bidimensional e controle de fluxo);
-   - **Memória física e *Column-Major Order* em Julia:** entendendo a representação por colunas (e indexação linear) e por que a ordem de iteração afeta radicalmente o cache da CPU;
-   - **Matrizes Estruturadas com `LinearAlgebra`:** explorando matrizes tridiagonais sem alocar zeros desnecessários;
    - **Fatoração LU com `LinearAlgebra`:** desvendando o objeto `lu(A)`, os fatores $L$ e $U$, resolução triangular em dois passos vs operador `\`, e o ganho real ao resolver para múltiplos lados direitos.
 2. **Parte 2 — A Transição para Sistemas Sobredeterminados (Quadrados Mínimos):**
    - O que ocorre quando temos mais equações do que variáveis ($m > n$)?
@@ -55,162 +52,9 @@ Na aula anterior, revisamos conceitos de vetores, matrizes e normas. Hoje estrut
    - Ajuste de modelo exponencial linearizável aos dados experimentais.
 """
 
-# ╔═╡ d1000000-0000-0000-0000-000000000004
-md"""
----
-# Parte 1: Treino Prático de Álgebra Linear & Desempenho
-
-## 1. Transposição de Matrizes "na Mão" e Laços `for`
-
-Dada uma matriz $A \in \mathbb{R}^{m \times n}$, a sua matriz transposta $B = A^T \in \mathbb{R}^{n \times m}$ é definida trocando linhas por colunas:
-$$B_{ji} = A_{ij}, \quad \text{para todo } i \in \{1, \ldots, m\} \text{ e } j \in \{1, \ldots, n\}.$$
-
-### Exercício Prático 1: Implementando a Transposta
-Implemente a função `minha_transposta(A)` que:
-1. Obtém as dimensões `m, n = size(A)`;
-2. Inicializa uma nova matriz de dimensões `(n, m)` preenchida com zeros do mesmo tipo dos elementos de $A$ (`zeros(eltype(A), n, m)`);
-3. Utiliza laços `for` aninhados para atribuir `B[j, i] = A[i, j]`;
-4. Retorna a matriz transposta $B$.
-"""
-
-# ╔═╡ d1000000-0000-0000-0000-000000000005
-function minha_transposta(A)
-	m, n = size(A)
-	B = zeros(eltype(A), n, m)
-	# Complete os laços for abaixo:
-	
-	return nothing 
-end
-
-# ╔═╡ d1000000-0000-0000-0000-000000000006
-let
-	A_teste = [1.0  2.0  3.0  4.0;
-	           5.0  6.0  7.0  8.0;
-	           9.0 10.0 11.0 12.0]
-	
-	B_obtida = minha_transposta(A_teste)
-	B_esperada = transpose(A_teste)
-	
-	(
-		dimensoes_original = size(A_teste),
-		dimensoes_transposta = size(B_obtida),
-		confere_com_nativo = B_obtida == B_esperada
-	)
-end
-
-# ╔═╡ d1000000-0000-0000-0000-000000000007
-md"""
-## 2. Memória Física: *Column-Major Order* e Localidade de Cache
-
-Por que a ordem dos laços `for` importa quando programamos computação científica?
-
-Em Julia (assim como em Fortran e MATLAB), matrizes bidimensionais são armazenadas na memória física do computador em **ordem por colunas** (*column-major order*). Já linguagens como C, C++ e Python (NumPy por padrão) utilizam ordem por linhas (*row-major order*).
-
-### O que isso significa na prática?
-Considere a matriz $2 \times 3$:
-$$A = \begin{bmatrix} 1 & 3 & 5 \\ 2 & 4 & 6 \end{bmatrix}.$$
-
-Na memória física (que é uma fita linear unidimensional de bytes), os elementos são gravados coluna após coluna:
-$$\text{RAM:} \quad [\mathbf{1}, \mathbf{2}], \quad [\mathbf{3}, \mathbf{4}], \quad [\mathbf{5}, \mathbf{6}].$$
-
-Como vimos na aula sobre representação e indexação linear:
-- `A[1]` é `1`
-- `A[2]` é `2`
-- `A[3]` é `3` (início da segunda coluna!)
-- `A[4]` é `4`
-- `vec(A)` ou `A[:]` reflete diretamente essa organização contígua da memória!
-
-### O Impacto no Cache da CPU
-Quando a CPU requisita um dado da memória RAM, ela não traz apenas um número isolado de 8 bytes; ela carrega um bloco contíguo de 64 bytes (uma **linha de cache**).
-- **Iterar por colunas** (`for j in 1:n, for i in 1:m`): acessa posições consecutivas de memória ($A_{1,j}, A_{2,j}, \dots$). A CPU aproveita os dados que já estão no cache (*cache hit*).
-- **Iterar por linhas** (`for i in 1:m, for j in 1:n`): a cada iteração pula $m$ posições na memória ($A_{i,1}, A_{i,2}, \dots$). O processador sofre constantes falhas de cache (*cache misses*), aguardando a busca na memória lenta.
-
-Vamos comprovar medindo o tempo com `@belapsed` do `BenchmarkTools` somando uma matriz $2.000 \times 2.000$:
-"""
-
-# ╔═╡ d1000000-0000-0000-0000-000000000008
-begin
-	# Iterando primeiro por colunas (amigável à memória em Julia):
-	function soma_por_colunas(A)
-		m, n = size(A)
-		s = 0.0
-		for j in 1:n
-			for i in 1:m
-				s += A[i,j]
-			end
-		end
-		return s
-	end
-
-	# Iterando primeiro por linhas (desfavorável à ordem em Julia):
-	function soma_por_linhas(A)
-		m, n = size(A)
-		s = 0.0
-		for i in 1:m
-		for j in 1:n
-			s += A[i,j]
-		end
-		end
-		return s
-	end
-
-	M = rand(2000, 2000)
-	
-	t_colunas = @belapsed soma_por_colunas($M)
-	t_linhas  = @belapsed soma_por_linhas($M)
-	
-	(
-		tempo_colunas_ms = t_colunas * 1000,
-		tempo_linhas_ms  = t_linhas * 1000,
-		fator_aceleracao = t_linhas / t_colunas,
-		conclusao = "Percorrer colunas é mais rápido porque respeita a contiguidade física dos dados na RAM!"
-	)
-end
-
-# ╔═╡ d1000000-0000-0000-0000-000000000009
-md"""
-## 3. Matrizes Estruturadas com `LinearAlgebra`: O Caso Tridiagonal
-
-Em problemas reais de engenharia e modelagem (como equações diferenciais, difusão de calor e vigas), matrizes de grande porte frequentemente possuem estrutura esparsa. Um dos casos mais comuns é a **matriz tridiagonal**:
-$$T = \begin{bmatrix} d_1 & du_1 & & & \\ dl_1 & d_2 & du_2 & & \\ & dl_2 & \ddots & \ddots & \\ & & \ddots & d_{N-1} & du_{N-1} \\ & & & dl_{N-1} & d_N \end{bmatrix}.$$
-
-Se $N = 100.000$, armazenar essa matriz como matriz cheia densa (`Matrix{Float64}`) exigiria:
-$$100.000 \times 100.000 \times 8\text{ bytes} \approx 80\text{ GB de memória RAM!}$$
-Além disso, resolver $T x = b$ com eliminação gaussiana densa gastaria $\mathcal{O}(N^3) \approx 10^{15}$ operações de ponto flutuante.
-
-O pacote `LinearAlgebra` possui o tipo nativo `Tridiagonal(dl, d, du)` (ou `SymTridiagonal(d, du)` para matrizes simétricas), que armazena apenas os $3$ vetores da diagonal:
-- Memória total: $\approx 3 \times 100.000 \times 8\text{ bytes} \approx 2{,}4\text{ MB}$!
-- O operador `\` detecta o tipo e aciona automaticamente o **Algoritmo de Thomas**, resolvendo o sistema em tempo linear $\mathcal{O}(N)$!
-"""
-
-# ╔═╡ d1000000-0000-0000-0000-000000000010
-let
-	N = 50_000
-	d  = 2.0 * ones(N)
-	dl = -1.0 * ones(N - 1)
-	du = -1.0 * ones(N - 1)
-	b = rand(N)
-	
-	# Criando a representação estruturada do LinearAlgebra:
-	T = SymTridiagonal(d, du)
-	
-	# Medindo o tempo de resolução O(N):
-	tempo_resolucao = @belapsed $T \ $b
-	x_sol = T \ b
-	res_norm = norm(T * x_sol - b)
-	
-	(
-		dimensao = N,
-		memoria_armazenamento_MB = (sizeof(d) + 2 * sizeof(du)) / (1024^2),
-		tempo_resolucao_ms = tempo_resolucao * 1000,
-		norma_do_residuo = res_norm,
-		complexidade = "O(N) operações lineares!"
-	)
-end
-
 # ╔═╡ d1000000-0000-0000-0000-000000000011
 md"""
-## 4. Fatoração LU no Pacote `LinearAlgebra`
+## 1. Fatoração LU no Pacote `LinearAlgebra`
 
 Como computadores resolvem sistemas lineares quadrados $A x = b$? 
 Vimos na aula passada que **nunca calculamos a matriz inversa $A^{-1}$**. A biblioteca `LinearAlgebra` implementa a decomposição LU com pivoteamento parcial:
@@ -301,8 +145,7 @@ let
 	
 	# Abordagem 2: Fatorando uma única vez e resolvendo F \ b
 	function resolver_com_fatoracao(A, lista_b)
-		F = lu(A)
-		return [F \ b for b in lista_b]
+		return nohting
 	end
 	
 	t_sem = @belapsed resolver_sem_fatorar($A_sim, $B_cenarios)
@@ -321,7 +164,7 @@ md"""
 ---
 # Parte 2: A Ponte para Sistemas Sobredeterminados (Quadrados Mínimos)
 
-## 5. O Problema de Quadrados Mínimos Linear
+## 2. O Problema de Quadrados Mínimos Linear
 
 Até agora, tratamos de sistemas quadrados $A x = b$ ($n \times n$), onde existe solução exata única quando $\det(A) \neq 0$.
 
@@ -347,12 +190,14 @@ md"""
 
 Existem duas formas principais de computar $\hat{x}$:
 
+
 1. **Equações Normais:**
    Resolve o sistema simétrico definido positivo $(A^T A) \hat{x} = A^T b$ (por exemplo, via Fatoração de Cholesky).
-   > [!WARNING] Cuidado com o Condicionamento!
-   > O número de condição da matriz das equações normais é o quadrado do número de condição de $A$:
-   > $$\kappa_2(A^T A) = (\kappa_2(A))^2.$$
-   > Se $A$ tiver $\kappa_2(A) \approx 10^5$, a matriz $A^T A$ terá $\kappa_2 \approx 10^{10}$, o que pode destruir metade dos dígitos de precisão da resposta!
+   
+!!! warning "Cuidado com o Condicionamento!"
+ >  O número de condição da matriz das equações normais é o quadrado do número de condição de $A$:
+ >  $$\kappa_2(A^T A) = (\kappa_2(A))^2.$$
+  > Se $A$ tiver $\kappa_2(A) \approx 10^5$, a matriz $A^T A$ terá $\kappa_2 \approx 10^{10}$, o que pode destruir metade dos dígitos de precisão da resposta!
 
 2. **Fatoração QR / Operador Nativo `A \ b`:**
    Decompõe $A = Q R$, onde $Q \in \mathbb{R}^{m \times n}$ possui colunas ortonormais ($Q^T Q = I$) e $R \in \mathbb{R}^{n \times n}$ é triangular superior:
@@ -380,7 +225,7 @@ end
 
 # ╔═╡ d1000000-0000-0000-0000-000000000018
 md"""
-## 6. Ajuste de Reta ($y = c_0 + c_1 x$)
+## 3. Ajuste de Reta ($y = c_0 + c_1 x$)
 
 Queremos ajustar o modelo linear $y \approx c_0 + c_1 x$ aos $m$ pontos $(x_i, y_i)$.
 Escrevendo na forma matricial:
@@ -431,7 +276,7 @@ end
 
 # ╔═╡ d1000000-0000-0000-0000-000000000021
 md"""
-## 7. Ajuste Polinomial Geral e a Matriz de Vandermonde
+## 4. Ajuste Polinomial Geral e a Matriz de Vandermonde
 
 E se os dados tiverem comportamento não linear? Podemos ajustar um polinômio de grau $d$:
 $$p(x) = c_0 + c_1 x + c_2 x^2 + \cdots + c_d x^d.$$
@@ -446,7 +291,7 @@ V = x .^ (0:d)'
 
 # ╔═╡ d1000000-0000-0000-0000-000000000022
 md"""
-## 8. Laboratório Interativo: Subajuste, Sobreajuste e Condicionamento
+## 5. Laboratório Interativo: Subajuste, Sobreajuste e Condicionamento
 
 Use os controles interativos abaixo para investigar:
 1. **Grau muito baixo ($d=1$):** Subajuste (*underfitting*), alto erro de modelagem.
@@ -529,15 +374,13 @@ begin
 	
 	# --- Espaço para o estudante completar ---
 	# 1. Linearização:
-	# z = log.(y_exp)
-	# A = [ones(m_pts_exp) t_exp]
+
 	
 	# 2. Resolução do sistema:
-	# coefs = A \ z
+
 	
 	# 3. Recuperação dos parâmetros:
-	# C_est = exp(coefs[1])
-	# k_est = coefs[2]
+
 	
 	# 4. Plote a curva ajustada sobre scatter(t_exp, y_exp)
 end
@@ -1813,13 +1656,6 @@ uuid = "23338594-aafe-5451-b93e-139f81909106"
 # ╟─d1000000-0000-0000-0000-000000000001
 # ╠═d1000000-0000-0000-0000-000000000002
 # ╟─d1000000-0000-0000-0000-000000000003
-# ╟─d1000000-0000-0000-0000-000000000004
-# ╠═d1000000-0000-0000-0000-000000000005
-# ╠═d1000000-0000-0000-0000-000000000006
-# ╟─d1000000-0000-0000-0000-000000000007
-# ╠═d1000000-0000-0000-0000-000000000008
-# ╟─d1000000-0000-0000-0000-000000000009
-# ╠═d1000000-0000-0000-0000-000000000010
 # ╟─d1000000-0000-0000-0000-000000000011
 # ╠═d1000000-0000-0000-0000-000000000012
 # ╟─d1000000-0000-0000-0000-000000000013
