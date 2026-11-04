@@ -95,8 +95,10 @@ let
 	erro_fatoracao = norm(F.P * A - F.L * F.U, Inf)
 	
 	# 2. Resolução em dois passos usando as matrizes triangulares nativas:
-	y = F.L \ (F.P * b)
-	x_passos = F.U \ y
+	# Passo 1: Resolver L y = P b
+	# y = ...
+	# Passo 2: Resolver U x = y
+	# x_passos = ...
 	
 	# 3. Resolução direta com o objeto Fatoração:
 	x_fatoracao = F \ b
@@ -109,10 +111,8 @@ let
 		U = F.U,
 		permutacao_p = F.p,
 		erro_decomposicao_PA_LU = erro_fatoracao,
-		solucao_dois_passos = x_passos,
 		solucao_F_barra_b = x_fatoracao,
-		solucao_A_barra_b = x_nativo,
-		sao_identicas = x_passos ≈ x_fatoracao ≈ x_nativo
+		solucao_A_barra_b = x_nativo
 	)
 end
 
@@ -145,7 +145,7 @@ let
 	
 	# Abordagem 2: Fatorando uma única vez e resolvendo F \ b
 	function resolver_com_fatoracao(A, lista_b)
-		return nohting
+		return nothing
 	end
 	
 	t_sem = @belapsed resolver_sem_fatorar($A_sim, $B_cenarios)
@@ -234,43 +234,28 @@ $$\begin{bmatrix} 1 & x_1 \\ 1 & x_2 \\ \vdots & \vdots \\ 1 & x_m \end{bmatrix}
 
 # ╔═╡ d1000000-0000-0000-0000-000000000019
 let
-	# Montando a matriz do modelo: primeira coluna de 1s, segunda de x_dados
-	A_reta = [ones(length(x_dados)) x_dados]
+	# 1. Montar a matriz do modelo A_reta (primeira coluna de 1s, segunda de x_dados):
+	# A_reta = ...
 	
-	# Resolução via Operador Nativo QR:
-	c_qr = A_reta \ y_dados
+	# 2. Resolver via Operador Nativo QR (A \ y) e via Equações Normais ((A'A) \ (A'y)):
+	# c_qr = ...
+	# c_norm = ...
 	
-	# Resolução via Equações Normais:
-	c_norm = (A_reta' * A_reta) \ (A_reta' * y_dados)
-	
-	# Resíduo e RMSE:
-	y_estimado = A_reta * c_qr
-	residuos = y_dados - y_estimado
-	rmse = sqrt(mean(residuos.^2))
-	
-	(
-		coeficientes_QR = c_qr,
-		coeficientes_EqNormais = c_norm,
-		intercepto_c0 = c_qr[1],
-		inclinacao_c1 = c_qr[2],
-		rmse = rmse,
-		cond_A = cond(A_reta),
-		cond_AtA = cond(A_reta' * A_reta)
-	)
+	# 3. Calcular valores estimados, resíduos e RMSE:
+	# y_estimado = ...
+	# rmse = ...
+
+	return nothing
 end
 
 # ╔═╡ d1000000-0000-0000-0000-000000000020
 let
-	A_reta = [ones(length(x_dados)) x_dados]
-	c_reta = A_reta \ y_dados
-	
 	p = scatter(x_dados, y_dados, label="Pontos Experimentais", color=:steelblue, markersize=5)
-	plot!(p, x -> c_reta[1] + c_reta[2] * x, 0.5, 5.0, 
-	      label="Reta de Ajuste: y = $(round(c_reta[1], digits=2)) + $(round(c_reta[2], digits=2))x", 
-	      lw=2.5, color=:crimson, legend=:topleft)
 	xlabel!(p, "x")
 	ylabel!(p, "y")
 	title!(p, "Regressão Linear por Quadrados Mínimos")
+	# Após calcular c_qr na célula anterior, adicione a reta de ajuste:
+	# plot!(p, x -> c_qr[1] + c_qr[2] * x, 0.5, 5.0, label="Reta Ajustada", lw=2.5, color=:crimson, legend=:topleft)
 	p
 end
 
@@ -373,16 +358,14 @@ begin
 	y_exp = 8.0 .* exp.(-0.75 .* t_exp) .* exp.(0.08 .* randn(m_pts_exp))
 	
 	# --- Espaço para o estudante completar ---
-	# 1. Linearização:
-
+	# 1. Linearização: z = log.(y_exp) e matriz A = [ones(m_pts_exp) t_exp]
 	
-	# 2. Resolução do sistema:
-
+	# 2. Resolução do sistema: coefs = A \ z
 	
-	# 3. Recuperação dos parâmetros:
-
+	# 3. Recuperação dos parâmetros físicos: C_est = exp(coefs[1]), k_est = coefs[2]
 	
 	# 4. Plote a curva ajustada sobre scatter(t_exp, y_exp)
+	return nothing
 end
 
 
