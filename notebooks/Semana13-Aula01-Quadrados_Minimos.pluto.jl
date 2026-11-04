@@ -41,13 +41,13 @@ md"""
 Na aula anterior, revisamos conceitos de vetores, matrizes e normas. Hoje estruturamos nossa aula em duas partes complementares:
 
 1. **Parte 1 — Treino Prático de Álgebra Linear & Desempenho:**
-   - **Fatoração LU com `LinearAlgebra`:** desvendando o objeto `lu(A)`, os fatores $L$ e $U$, resolução triangular em dois passos vs operador `\`, e o ganho real ao resolver para múltiplos lados direitos.
+   - **Fatoração LU com `LinearAlgebra`:** desvendando o objeto `lu(A)`, os fatores ``L`` e ``U``, resolução triangular em dois passos vs operador `\`, e o ganho real ao resolver para múltiplos lados direitos.
 2. **Parte 2 — A Transição para Sistemas Sobredeterminados (Quadrados Mínimos):**
-   - O que ocorre quando temos mais equações do que variáveis ($m > n$)?
-   - Minimização do resíduo $\|Ax - b\|_2^2$;
-   - **Equações Normais ($A^T A x = A^T b$)** versus **Fatoração QR / Operador Nativo (`A \ b`)** e o problema do condicionamento $\kappa(A^T A) = (\kappa(A))^2$;
+   - O que ocorre quando temos mais equações do que variáveis (``m > n``)?
+   - Minimização do resíduo ``\|Ax - b\|_2^2``;
+   - **Equações Normais (``A^T A x = A^T b``)** versus **Fatoração QR / Operador Nativo (`A \ b`)** e o problema do condicionamento ``\kappa(A^T A) = (\kappa(A))^2``;
    - Ajuste linear e ajuste polinomial via matriz de Vandermonde;
-   - **Laboratório Interativo com PlutoUI:** experimentando ruído, grau do polinômio, *underfitting*, *overfitting* e a explosão de $\kappa(V)$.
+   - **Laboratório Interativo com PlutoUI:** experimentando ruído, grau do polinômio, *underfitting*, *overfitting* e a explosão de ``\kappa(V)``.
 3. **Parte 3 — Exercício de Aplicação:**
    - Ajuste de modelo exponencial linearizável aos dados experimentais.
 """
@@ -60,9 +60,9 @@ Como computadores resolvem sistemas lineares quadrados $A x = b$?
 Vimos na aula passada que **nunca calculamos a matriz inversa $A^{-1}$**. A biblioteca `LinearAlgebra` implementa a decomposição LU com pivoteamento parcial:
 $$P A = L U,$$
 onde:
-- $P$ é uma matriz de permutação que reflete a troca de linhas (essencial para evitar divisões por zero ou números muito pequenos, garantindo estabilidade numérica);
-- $L$ é uma matriz triangular inferior unitária (diagonal com $1$s);
-- $U$ é uma matriz triangular superior.
+- ``P`` é uma matriz de permutação que reflete a troca de linhas (essencial para evitar divisões por zero ou números muito pequenos, garantindo estabilidade numérica);
+- ``L`` é uma matriz triangular inferior unitária (diagonal com 1s);
+- ``U`` é uma matriz triangular superior.
 
 ### O Objeto `LU` retornado por `lu(A)`
 Quando chamamos `F = lu(A)`, Julia não retorna apenas uma matriz, mas uma estrutura especializada de fatoração contendo:
@@ -202,9 +202,9 @@ Existem duas formas principais de computar $\hat{x}$:
 2. **Fatoração QR / Operador Nativo `A \ b`:**
    Decompõe $A = Q R$, onde $Q \in \mathbb{R}^{m \times n}$ possui colunas ortonormais ($Q^T Q = I$) e $R \in \mathbb{R}^{n \times n}$ é triangular superior:
    $$A^T A \hat{x} = A^T b \implies R^T Q^T Q R \hat{x} = R^T Q^T b \implies R \hat{x} = Q^T b.$$
-   - Como $R$ é triangular superior, basta uma substituição retroativa!
-   - O condicionamento de $R$ é exatamente $\kappa_2(R) = \kappa_2(A)$, preservando os dígitos significativos.
-   - Em Julia, quando $A$ é retangular com $m > n$, o operador nativo `A \ b` utiliza automaticamente rotinas LAPACK baseadas em **Fatoração QR** (`dgels`), garantindo máxima estabilidade numérica!
+   - Como ``R`` é triangular superior, basta uma substituição retroativa!
+   - O condicionamento de ``R`` é exatamente ``\kappa_2(R) = \kappa_2(A)``, preservando os dígitos significativos.
+   - Em Julia, quando ``A`` é retangular com ``m > n``, o operador nativo `A \ b` utiliza automaticamente rotinas LAPACK baseadas em **Fatoração QR** (`dgels`), garantindo máxima estabilidade numérica!
 """
 
 # ╔═╡ d1000000-0000-0000-0000-000000000017
@@ -341,10 +341,10 @@ Para um conjunto de $m$ medições $(t_i, y_i)$, montamos o sistema linear sobre
 $$\begin{bmatrix} 1 & t_1 \\ 1 & t_2 \\ \vdots & \vdots \\ 1 & t_m \end{bmatrix} \begin{bmatrix} a_0 \\ a_1 \end{bmatrix} \approx \begin{bmatrix} \ln(y_1) \\ \ln(y_2) \\ \vdots \\ \ln(y_m) \end{bmatrix} \implies A a \approx z.$$
 
 **Sua tarefa:**
-1. A partir dos dados simulados em `t_exp` e `y_exp`, monte o vetor $z = \ln(y)$ e a matriz $A = [\mathbf{1} \quad t]$;
+1. A partir dos dados simulados em `t_exp` e `y_exp`, monte o vetor ``z = \ln(y)`` e a matriz ``A = [\mathbf{1} \quad t]``;
 2. Resolva o sistema linearizado com o operador nativo do `LinearAlgebra` (`A \ z`);
-3. Recupere os parâmetros físicos: $\hat{C} = e^{a_0}$ e $\hat{k} = a_1$;
-4. Calcule o erro quadrático médio $RMSE = \sqrt{\frac{1}{m}\sum_{i=1}^m (y_i - \hat{C} e^{\hat{k} t_i})^2}$ na escala original;
+3. Recupere os parâmetros físicos: ``\hat{C} = e^{a_0}`` e ``\hat{k} = a_1``;
+4. Calcule o erro quadrático médio ``RMSE = \sqrt{\frac{1}{m}\sum_{i=1}^m (y_i - \hat{C} e^{\hat{k} t_i})^2}`` na escala original;
 5. Plote os dados experimentais e a curva ajustada.
 """
 
