@@ -10,7 +10,7 @@ md"""
 ## UFSC/Blumenau
 ### MAT4642 - Introdução à Matemática Computacional
 ### Prof. Luiz-Rafael Santos
-### Semana 15 - Aula 02
+### Semana 16 - Aula 02
 """
 
 # ╔═╡ 0f90a5d0-3b0a-4d81-8430-c46badcae84f

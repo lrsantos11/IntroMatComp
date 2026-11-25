@@ -129,21 +129,29 @@ Vamos comprovar medindo o tempo com `@belapsed` do `BenchmarkTools` somando uma 
 """
 
 # ╔═╡ d1000000-0000-0000-0000-000000000008
-let
+begin
 	# Iterando primeiro por colunas (amigável à memória em Julia):
 	function soma_por_colunas(A)
 		m, n = size(A)
 		s = 0.0
-		
-		return nothing
+		for j in 1:n
+			for i in 1:m
+				s += A[i,j]
+			end
+		end
+		return s
 	end
 
 	# Iterando primeiro por linhas (desfavorável à ordem em Julia):
 	function soma_por_linhas(A)
 		m, n = size(A)
 		s = 0.0
-		
-		return nothing 
+		for i in 1:m
+		for j in 1:n
+			s += A[i,j]
+		end
+		end
+		return s
 	end
 
 	M = rand(2000, 2000)
